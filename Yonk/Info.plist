@@ -26,6 +26,8 @@
 	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
 	<key>LSUIElement</key>
 	<true/>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Finder에서 선택한 파일을 선반에 추가하기 위해 Finder와 통신합니다.</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>© 2026 Jason Hwang</string>
 	<key>NSPrincipalClass</key>

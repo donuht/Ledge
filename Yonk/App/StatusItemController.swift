@@ -7,7 +7,7 @@ final class StatusItemController: NSObject {
     private let shelf: ShelfPanelController
     private let menu = NSMenu()
     private let toggleItem: NSMenuItem
-    private var settingsWindow: NSWindow?
+    private let settingsWindow = SettingsWindowController()
     private var edgeMenu: NSMenu?
 
     init(shelf: ShelfPanelController) {
@@ -69,28 +69,11 @@ final class StatusItemController: NSObject {
 
     @objc private func selectEdge(_ sender: NSMenuItem) {
         guard let raw = sender.representedObject as? String, let edge = ShelfEdge(rawValue: raw) else { return }
-        shelf.edge = edge
+        AppSettings.shared.edge = edge
     }
 
     @objc private func openSettings() {
-        if settingsWindow == nil {
-            let window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 360, height: 180),
-                styleMask: [.titled, .closable],
-                backing: .buffered,
-                defer: false
-            )
-            window.title = "Yonk 설정"
-            window.isReleasedWhenClosed = false
-            window.center()
-            let label = NSTextField(wrappingLabelWithString: "선반 위치는 메뉴바 아이콘 오른쪽 클릭 → 선반 위치에서 바꿉니다.\n나머지 설정은 다음 단계에서 추가됩니다.")
-            label.frame = NSRect(x: 20, y: 70, width: 320, height: 60)
-            label.alignment = .center
-            window.contentView?.addSubview(label)
-            settingsWindow = window
-        }
-        NSApp.activate()
-        settingsWindow?.makeKeyAndOrderFront(nil)
+        settingsWindow.show()
     }
 }
 
@@ -98,7 +81,7 @@ extension StatusItemController: NSMenuDelegate {
     func menuWillOpen(_ menu: NSMenu) {
         toggleItem.title = shelf.isVisible ? "선반 숨기기" : "선반 보기"
         for item in edgeMenu?.items ?? [] {
-            item.state = (item.representedObject as? String) == shelf.edge.rawValue ? .on : .off
+            item.state = (item.representedObject as? String) == AppSettings.shared.edge.rawValue ? .on : .off
         }
     }
 

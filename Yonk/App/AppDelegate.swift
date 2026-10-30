@@ -20,12 +20,14 @@ enum YonkMain {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItemController: StatusItemController?
     private var shelfController: ShelfPanelController?
+    private var hotkeyController: HotkeyController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSLog("Yonk: didFinishLaunching")
         let shelf = ShelfPanelController()
         shelfController = shelf
         statusItemController = StatusItemController(shelf: shelf)
+        hotkeyController = HotkeyController(shelf: shelf)
         shelf.showAtLaunchIfNeeded()
     }
 

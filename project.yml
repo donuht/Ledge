@@ -18,12 +18,18 @@ settings:
     ENABLE_HARDENED_RUNTIME: NO
     ENABLE_APP_SANDBOX: NO
     DEAD_CODE_STRIPPING: YES
+packages:
+  KeyboardShortcuts:
+    url: https://github.com/sindresorhus/KeyboardShortcuts
+    from: "2.0.0"
 targets:
   Yonk:
     type: application
     platform: macOS
     sources:
       - path: Yonk
+    dependencies:
+      - package: KeyboardShortcuts
     info:
       path: Yonk/Info.plist
       properties:
@@ -35,6 +41,7 @@ targets:
         NSHumanReadableCopyright: "© 2026 Jason Hwang"
         NSPrincipalClass: NSApplication
         CFBundleDevelopmentRegion: ko
+        NSAppleEventsUsageDescription: "Finder에서 선택한 파일을 선반에 추가하기 위해 Finder와 통신합니다."
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.jasonhwangfilm.yonk

@@ -19,15 +19,9 @@ final class ShelfPanelController {
         didSet { refreshRootView() }
     }
 
-    /// 선반이 붙는 가장자리. 바꾸면 저장되고, 보이는 중이면 즉시 옮겨진다.
-    var edge: ShelfEdge {
-        didSet {
-            guard edge != oldValue else { return }
-            edge.save()
-            refreshRootView()
-            if isVisible { position() }
-        }
-    }
+    /// 선반이 붙는 가장자리(AppSettings가 원본). 바뀌면 보이는 중이라도 즉시 옮겨진다.
+    private var edge: ShelfEdge { AppSettings.shared.edge }
+    private var edgeObserver: (any NSObjectProtocol)?
 
     var isVisible: Bool { panel.isVisible }
 
@@ -36,7 +30,7 @@ final class ShelfPanelController {
 
     init(store: ShelfStore = ShelfStore()) {
         self.store = store
-        edge = ShelfEdge.saved
+        let edge = ShelfEdge.saved
         panel = ShelfPanel(contentRect: NSRect(origin: .zero, size: edge.panelSize))
 
         dropView = DropTargetView(frame: panel.contentRect(forFrameRect: panel.frame))
@@ -61,6 +55,9 @@ final class ShelfPanelController {
         // 평소엔 숨어 있다가, 다른 앱에서 드래그가 시작되면 나타나고 끝난 뒤 비어 있으면 사라진다.
         dragMonitor.onDragBegan = { [weak self] in
             guard let self else { return }
+            // 무시 목록에 있는 앱이 맨 앞이면 나타나지 않는다.
+            let front = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+            if AppSettings.shared.isIgnored(bundleID: front) { return }
             hideWorkItem?.cancel()
             if !isVisible { show() }
         }
@@ -71,6 +68,16 @@ final class ShelfPanelController {
             self?.scheduleAutoHideIfEmpty()
         }
         dragMonitor.start()
+
+        edgeObserver = NotificationCenter.default.addObserver(
+            forName: AppSettings.edgeDidChange, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                self.refreshRootView()
+                if self.isVisible { self.position() }
+            }
+        }
     }
 
     private func refreshRootView() {
