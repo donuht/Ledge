@@ -14,6 +14,16 @@ enum SnippetWriter {
 
     // MARK: - 이미지
 
+    static let imageTypes: [NSPasteboard.PasteboardType] = [
+        .png, NSPasteboard.PasteboardType("public.jpeg"), NSPasteboard.PasteboardType("com.compuserve.gif"),
+        NSPasteboard.PasteboardType("org.webmproject.webp"), .tiff,
+    ]
+
+    static func hasImageData(_ pasteboard: NSPasteboard) -> Bool {
+        guard let types = pasteboard.types else { return false }
+        return imageTypes.contains { types.contains($0) }
+    }
+
     /// 페이스트보드의 이미지 데이터를 파일로 저장한다. 원본 포맷(PNG/JPEG/GIF…)이 있으면 그대로, 없으면 PNG.
     static func writeImage(from pasteboard: NSPasteboard) -> URL? {
         let preferred: [(NSPasteboard.PasteboardType, String)] = [

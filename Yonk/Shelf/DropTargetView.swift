@@ -65,14 +65,21 @@ final class DropTargetView: NSView {
             return true
         }
 
-        // 2. 파일 프로미스: 보내는 쪽이 저장 폴더에 직접 써 준다(브라우저 이미지, 메일 첨부, 사진 앱).
+        // 2. 이미지 데이터가 바로 실려 있으면(Chrome은 jpeg/tiff를 같이 보낸다) 프로미스를 기다리지 않고 저장한다.
+        if SnippetWriter.hasImageData(pb), let url = SnippetWriter.writeImage(from: pb) {
+            YonkLog.write("drop: image data → \(url.lastPathComponent)")
+            onDrop?([url])
+            return true
+        }
+
+        // 3. 파일 프로미스: 보내는 쪽이 저장 폴더에 직접 써 준다(메일 첨부, 사진 앱).
         if let receivers = pb.readObjects(forClasses: [NSFilePromiseReceiver.self]) as? [NSFilePromiseReceiver],
            !receivers.isEmpty {
             receivePromises(receivers, fallbackPasteboard: pb)
             return true
         }
 
-        // 3. 구형 파일 프로미스(Chrome·Electron 이미지).
+        // 4. 구형 파일 프로미스(Chrome·Electron 이미지).
         if WebImporter.hasLegacyPromise(pb) {
             let fallback = snapshot(of: pb)
             let started = WebImporter.receiveLegacyPromise(sender) { [weak self] urls in
@@ -134,27 +141,37 @@ final class DropTargetView: NSView {
         // 프로미스가 전부 실패하면(일부 사이트) 이미지 데이터로 대신 저장하기 위해 미리 복사해 둔다.
         let fallback = snapshot(of: pb)
 
+        YonkLog.write("promise: waiting for \(receivers.count)")
         var pending = receivers.count
         var received: [URL] = []
+        var finished = false
+        let finish: @MainActor () -> Void = { [weak self] in
+            guard let self, !finished else { return }
+            finished = true
+            YonkLog.write("promise: done received=\(received.map(\.lastPathComponent))")
+            if !received.isEmpty {
+                self.onDrop?(received)
+            } else {
+                self.importWebContent(from: fallback)
+            }
+        }
         for receiver in receivers {
-            receiver.receivePromisedFiles(atDestination: destination, options: [:], operationQueue: promiseQueue) { [weak self] url, error in
+            receiver.receivePromisedFiles(atDestination: destination, options: [:], operationQueue: promiseQueue) { url, error in
                 Task { @MainActor in
-                    guard let self else { return }
                     if let error {
-                        NSLog("Yonk: 파일 프로미스 실패: \(error)")
+                        YonkLog.write("promise: failed \(error)")
                     } else {
                         received.append(url)
                     }
                     pending -= 1
-                    if pending == 0 {
-                        if !received.isEmpty {
-                            self.onDrop?(received)
-                        } else {
-                            self.importWebContent(from: fallback)
-                        }
-                    }
+                    if pending == 0 { finish() }
                 }
             }
+        }
+        // 일부 앱은 프로미스를 끝내 이행하지 않는다. 10초 지나면 페이스트보드 내용으로 대신 처리한다.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
+            if !finished { YonkLog.write("promise: timeout") }
+            finish()
         }
     }
 

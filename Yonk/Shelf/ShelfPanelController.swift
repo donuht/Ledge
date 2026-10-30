@@ -81,7 +81,10 @@ final class ShelfPanelController {
             scheduleAutoHideIfEmpty()
         }
         store.onChange = { [weak self] in
-            self?.scheduleAutoHideIfEmpty()
+            guard let self else { return }
+            // 드롭 뒤 비동기로(다운로드·프로미스) 항목이 들어오면 숨어 있던 선반을 다시 보여 준다.
+            if !store.isEmpty, !isVisible { show() }
+            scheduleAutoHideIfEmpty()
         }
         dragMonitor.start()
 
