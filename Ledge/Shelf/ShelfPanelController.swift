@@ -17,6 +17,9 @@ final class ShelfPanelController {
 
     /// 지금 진행 중인 드래그가 무시 앱에서 시작됐는지.
     private var isCurrentDragIgnored = false
+    /// 커서 옆 모드의 멈춤 감지용.
+    private var lastMouse: NSPoint?
+    private var stillSince: Date?
 
     /// 가장자리 감지 두께(pt). 포인터는 화면 밖으로 못 나가므로 가장자리에 닿으면 좌표가 경계값이 된다.
     static let edgeThreshold: CGFloat = 6
@@ -71,17 +74,37 @@ final class ShelfPanelController {
             isCurrentDragIgnored = AppSettings.shared.isIgnored(bundleID: front)
             if isCurrentDragIgnored { return }
             hideWorkItem?.cancel()
+            stillSince = nil
+            lastMouse = nil
             switch AppSettings.shared.showTrigger {
             case .dragStart: if !isVisible { show() }
-            case .cursor: if !isVisible { showNearCursor() }
+            case .cursor: if !isVisible, AppSettings.shared.cursorPauseDelay <= 0 { showNearCursor() }
             case .edge: break
             }
         }
         dragMonitor.onDragMoved = { [weak self] mouse in
             guard let self, !isCurrentDragIgnored, !isVisible else { return }
-            guard AppSettings.shared.showTrigger == .edge, Self.isAtEdge(mouse, edge: edge) else { return }
-            hideWorkItem?.cancel()
-            show()
+            switch AppSettings.shared.showTrigger {
+            case .edge:
+                guard Self.isAtEdge(mouse, edge: edge) else { return }
+                hideWorkItem?.cancel()
+                show()
+            case .cursor:
+                // 끌다가 멈칫하면(설정한 시간 동안 거의 안 움직이면) 커서 옆에 띄운다.
+                let now = Date()
+                if let last = lastMouse, hypot(mouse.x - last.x, mouse.y - last.y) < 3 {
+                    if stillSince == nil { stillSince = now }
+                    if now.timeIntervalSince(stillSince!) >= AppSettings.shared.cursorPauseDelay {
+                        hideWorkItem?.cancel()
+                        showNearCursor()
+                    }
+                } else {
+                    stillSince = nil
+                }
+                lastMouse = mouse
+            case .dragStart:
+                break
+            }
         }
         dragMonitor.onDragEnded = { [weak self] in
             guard let self else { return }

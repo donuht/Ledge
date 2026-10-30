@@ -50,6 +50,11 @@ final class AppSettings {
         size = .custom
     }
 
+    /// 커서 옆 모드: 끌다가 이만큼 멈춰 있으면 나타난다(초). 0이면 집는 즉시.
+    var cursorPauseDelay: Double {
+        didSet { UserDefaults.standard.set(cursorPauseDelay, forKey: Keys.cursorPauseDelay) }
+    }
+
     /// 비었을 때 사라지기까지의 지연(초).
     var autoHideDelay: Double {
         didSet { UserDefaults.standard.set(autoHideDelay, forKey: Keys.autoHideDelay) }
@@ -127,6 +132,7 @@ final class AppSettings {
         static let customVertical = "shelf.customSize.vertical"
         static let customHorizontal = "shelf.customSize.horizontal"
         static let autoHideDelay = "behavior.autoHideDelay"
+        static let cursorPauseDelay = "behavior.cursorPauseDelay"
         static let clipboardMaxItems = "clipboard.maxItems"
         static let clipboardMaxAgeDays = "clipboard.maxAgeDays"
     }
@@ -145,6 +151,7 @@ final class AppSettings {
         customVertical = loadSize(Keys.customVertical, fallback: ShelfSize.medium.size(vertical: true)!)
         customHorizontal = loadSize(Keys.customHorizontal, fallback: ShelfSize.medium.size(vertical: false)!)
         autoHideDelay = d.object(forKey: Keys.autoHideDelay) as? Double ?? 0.5
+        cursorPauseDelay = d.object(forKey: Keys.cursorPauseDelay) as? Double ?? 0.5
         clipboardMaxItems = d.object(forKey: Keys.clipboardMaxItems) as? Int ?? 500
         clipboardMaxAgeDays = d.object(forKey: Keys.clipboardMaxAgeDays) as? Int ?? 30
         ignoredBundleIDs = UserDefaults.standard.stringArray(forKey: Keys.ignoredBundleIDs) ?? []

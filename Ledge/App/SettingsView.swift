@@ -31,6 +31,16 @@ struct SettingsView: View {
                 Text(verbatim: triggerHelp)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                if settings.showTrigger == .cursor {
+                    HStack {
+                        Slider(value: $settings.cursorPauseDelay, in: 0...2, step: 0.1) {
+                            Text("멈춘 뒤 나타나기까지")
+                        }
+                        Text(settings.cursorPauseDelay <= 0 ? String(localized: "바로") : String(format: String(localized: "%.1f초"), settings.cursorPauseDelay))
+                            .monospacedDigit()
+                            .frame(width: 44, alignment: .trailing)
+                    }
+                }
                 HStack {
                     Slider(value: $settings.autoHideDelay, in: 0.2...3, step: 0.1) {
                         Text("비면 사라지기까지")
@@ -146,7 +156,7 @@ struct SettingsView: View {
         switch settings.showTrigger {
         case .dragStart: String(localized: "드래그를 시작하면 바로 나타나고, 비어 있으면 사라집니다.")
         case .edge: String(localized: "파일을 끌고 화면의 \(settings.edge.title) 가장자리에 닿으면 나타나고, 비어 있으면 사라집니다.")
-        case .cursor: String(localized: "드래그를 시작하면 커서 옆에 나타나고, 비어 있으면 사라집니다. 메뉴로 열면 그때의 커서 옆에 뜹니다.")
+        case .cursor: String(localized: "끌다가 잠시 멈추면 커서 옆에 나타나고, 비어 있으면 사라집니다. 창 사이로 휙 옮기는 짧은 드래그에는 뜨지 않습니다.")
         }
     }
 

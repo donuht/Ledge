@@ -1142,22 +1142,42 @@
         }
       }
     },
-    "커서 옆에": {
+    "커서 옆에 (멈추면)": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Next to the cursor"
+            "value": "Next to the cursor (when paused)"
           }
         }
       }
     },
-    "드래그를 시작하면 커서 옆에 나타나고, 비어 있으면 사라집니다. 메뉴로 열면 그때의 커서 옆에 뜹니다.": {
+    "멈춘 뒤 나타나기까지": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Appears next to the cursor when a drag starts and hides when empty. Opening it from the menu shows it next to the cursor too."
+            "value": "Show after pausing for"
+          }
+        }
+      }
+    },
+    "바로": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instantly"
+          }
+        }
+      }
+    },
+    "끌다가 잠시 멈추면 커서 옆에 나타나고, 비어 있으면 사라집니다. 창 사이로 휙 옮기는 짧은 드래그에는 뜨지 않습니다.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appears next to the cursor when you pause mid-drag and hides when empty. Quick drags between windows won't trigger it."
           }
         }
       }

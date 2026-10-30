@@ -13,7 +13,7 @@ enum ShowTrigger: String, CaseIterable, Sendable {
         switch self {
         case .dragStart: String(localized: "드래그 시작하면 바로")
         case .edge: String(localized: "가장자리에 닿으면")
-        case .cursor: String(localized: "커서 옆에")
+        case .cursor: String(localized: "커서 옆에 (멈추면)")
         }
     }
 
