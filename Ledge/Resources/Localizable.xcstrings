@@ -1181,6 +1181,26 @@
           }
         }
       }
+    },
+    "문제 진단 기록 남기기": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep a diagnostic log"
+          }
+        }
+      }
+    },
+    "뭔가 안 될 때 켜 두면 동작이 ~/Library/Logs/Ledge/ledge.log 에 기록됩니다.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn this on when something misbehaves; activity is written to ~/Library/Logs/Ledge/ledge.log."
+          }
+        }
+      }
     }
   }
 }

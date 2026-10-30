@@ -73,6 +73,10 @@ struct SettingsView: View {
                 Text("언어는 다시 실행하면 적용됩니다.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                Toggle("문제 진단 기록 남기기", isOn: $settings.diagnosticLogging)
+                Text("뭔가 안 될 때 켜 두면 동작이 ~/Library/Logs/Ledge/ledge.log 에 기록됩니다.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             Section {

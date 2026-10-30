@@ -17,6 +17,8 @@ final class ShelfStore {
         struct Entry: Sendable {
             let index: Int
             let item: ShelfItem
+            /// 휴지통으로 보낸 스니펫 파일(원래 경로 → 휴지통 안 경로). 되살리면 다시 가져온다.
+            var trashed: [URL: URL] = [:]
         }
         let entries: [Entry]
     }
@@ -102,13 +104,34 @@ final class ShelfStore {
         let existing = Set(items.flatMap(\.urls))
         for entry in batch.entries.sorted(by: { $0.index < $1.index }) {
             guard !entry.item.urls.contains(where: { existing.contains($0) }) else { continue }
+            for (original, inTrash) in entry.trashed where !FileManager.default.fileExists(atPath: original.path(percentEncoded: false)) {
+                try? FileManager.default.moveItem(at: inTrash, to: original)
+            }
             let index = min(entry.index, items.count)
             items.insert(entry.item, at: index)
         }
         save()
     }
 
+    /// 선반에서 빠진 항목 중 Ledge가 만든 스니펫 파일(웹 이미지·글·링크)은 휴지통으로 보낸다. 원본 파일은 건드리지 않는다.
+    private func trashSnippets(of item: ShelfItem) -> [URL: URL] {
+        let snippetDir = SnippetWriter.directory.standardizedFileURL.path(percentEncoded: false)
+        var trashed: [URL: URL] = [:]
+        for url in item.urls where url.path(percentEncoded: false).hasPrefix(snippetDir) {
+            var result: NSURL?
+            if (try? FileManager.default.trashItem(at: url, resultingItemURL: &result)) != nil, let result {
+                trashed[url] = result as URL
+            }
+        }
+        return trashed
+    }
+
     private func pushRemoved(_ batch: RemovedBatch) {
+        let batch = RemovedBatch(entries: batch.entries.map { entry in
+            var entry = entry
+            entry.trashed = trashSnippets(of: entry.item)
+            return entry
+        })
         removedBatches.append(batch)
         if removedBatches.count > maxRemovedBatches {
             removedBatches.removeFirst(removedBatches.count - maxRemovedBatches)

@@ -160,7 +160,7 @@ final class DropTargetView: NSView {
             receiver.receivePromisedFiles(atDestination: destination, options: [:], operationQueue: promiseQueue) { url, error in
                 Task { @MainActor in
                     if let error {
-                        LedgeLog.write("promise: failed \(error)")
+                        LedgeLog.error("promise: failed \(error)")
                     } else {
                         received.append(url)
                     }
@@ -171,7 +171,7 @@ final class DropTargetView: NSView {
         }
         // 일부 앱은 프로미스를 끝내 이행하지 않는다. 10초 지나면 페이스트보드 내용으로 대신 처리한다.
         DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
-            if !finished { LedgeLog.write("promise: timeout") }
+            if !finished { LedgeLog.error("promise: timeout") }
             finish()
         }
     }

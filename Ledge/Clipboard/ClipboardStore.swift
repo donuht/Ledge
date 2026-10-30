@@ -57,7 +57,7 @@ final class ClipboardStore {
             do {
                 try png.write(to: Self.directory.appendingPathComponent(file), options: .atomic)
             } catch {
-                LedgeLog.write("clipboard: 이미지 저장 실패 \(error)")
+                LedgeLog.error("clipboard: 이미지 저장 실패 \(error)")
                 return nil
             }
             return ClipboardEntry(id: UUID(), kind: .image, date: Date(), isPinned: false, text: nil, imageFile: file,

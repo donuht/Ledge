@@ -80,6 +80,11 @@ final class AppSettings {
         }
     }
 
+    /// 문제 진단용 동작 기록(~/Library/Logs/Ledge/ledge.log). 기본 꺼짐.
+    var diagnosticLogging: Bool {
+        didSet { UserDefaults.standard.set(diagnosticLogging, forKey: LedgeLog.enabledKey) }
+    }
+
     /// 드래그 중 선반이 나타나는 조건.
     var showTrigger: ShowTrigger {
         didSet {
@@ -152,6 +157,7 @@ final class AppSettings {
         customHorizontal = loadSize(Keys.customHorizontal, fallback: ShelfSize.medium.size(vertical: false)!)
         autoHideDelay = d.object(forKey: Keys.autoHideDelay) as? Double ?? 0.5
         cursorPauseDelay = d.object(forKey: Keys.cursorPauseDelay) as? Double ?? 0.5
+        diagnosticLogging = d.bool(forKey: LedgeLog.enabledKey)
         clipboardMaxItems = d.object(forKey: Keys.clipboardMaxItems) as? Int ?? 500
         clipboardMaxAgeDays = d.object(forKey: Keys.clipboardMaxAgeDays) as? Int ?? 30
         ignoredBundleIDs = UserDefaults.standard.stringArray(forKey: Keys.ignoredBundleIDs) ?? []

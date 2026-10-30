@@ -51,7 +51,7 @@ enum WebImporter {
                   let url = SnippetWriter.writeText(text) {
             completion([url])
         } else {
-            LedgeLog.write("web import: nothing usable, types=\(pb.types?.map(\.rawValue) ?? [])")
+            LedgeLog.error("web import: nothing usable, types=\(pb.types?.map(\.rawValue) ?? [])")
             completion([])
         }
     }
@@ -165,7 +165,7 @@ enum WebImporter {
             let status = (response as? HTTPURLResponse)?.statusCode ?? 0
             Task { @MainActor in
                 guard let data, !data.isEmpty, error == nil, status < 400, let mime, mime.hasPrefix("image/") else {
-                    LedgeLog.write("image download failed \(url) status=\(status) mime=\(mime ?? "-") err=\(error.map { "\($0)" } ?? "-")")
+                    LedgeLog.error("image download failed \(url) status=\(status) mime=\(mime ?? "-") err=\(error.map { "\($0)" } ?? "-")")
                     completion(nil)
                     return
                 }
