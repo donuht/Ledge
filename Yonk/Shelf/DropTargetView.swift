@@ -17,14 +17,14 @@ final class DropTargetView: NSView {
 
     override var acceptsFirstResponder: Bool { true }
 
-    /// 빈 곳 클릭 = 선택 해제.
-    override func mouseDown(with event: NSEvent) {
-        window?.makeKey()
+    /// 빈 곳 클릭 = 선택 해제(패널의 sendEvent에서 호출).
+    func backgroundClicked() {
         store?.clearSelection()
         QuickLookController.shared.close()
     }
 
     override func keyDown(with event: NSEvent) {
+        YonkLog.write("dropView keyDown code=\(event.keyCode)")
         guard let store else { return super.keyDown(with: event) }
         let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
         switch event.keyCode {

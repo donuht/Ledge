@@ -9,12 +9,28 @@ final class DraggableItemView: NSView, NSDraggingSource {
 
     let style: Style
     var item: ShelfItem {
-        didSet { if item != oldValue { refresh() } }
+        didSet {
+            if item != oldValue { refresh() }
+            if item.id != oldValue.id { observeSelection() }
+        }
     }
     var isSelected = false {
         didSet { if isSelected != oldValue { updateBackground() } }
     }
-    weak var store: ShelfStore?
+    weak var store: ShelfStore? {
+        didSet { if store !== oldValue { observeSelection() } }
+    }
+
+    /// SwiftUI 재평가에 기대지 않고 스토어의 선택 상태를 직접 관찰한다.
+    private func observeSelection() {
+        guard let store else { return }
+        let id = item.id
+        withObservationTracking {
+            isSelected = store.selectedIDs.contains(id)
+        } onChange: { [weak self] in
+            Task { @MainActor in self?.observeSelection() }
+        }
+    }
 
     private let iconView = NSImageView()
     private let nameField = NSTextField(labelWithString: "")
@@ -210,7 +226,6 @@ final class DraggableItemView: NSView, NSDraggingSource {
 
     override func mouseDown(with event: NSEvent) {
         mouseDownPoint = convert(event.locationInWindow, from: nil)
-        window?.makeKey()
         if event.clickCount == 2 {
             mouseDownPoint = nil
             open()
@@ -230,6 +245,7 @@ final class DraggableItemView: NSView, NSDraggingSource {
         guard mouseDownPoint != nil else { return }
         mouseDownPoint = nil
         store?.select(item.id, extend: event.modifierFlags.contains(.command))
+        YonkLog.write("item select \(item.name) selected=\(store?.selectedIDs.count ?? -1) key=\(window?.isKeyWindow ?? false) fr=\(window?.firstResponder.map { String(describing: type(of: $0)) } ?? "nil")")
         if let store { QuickLookController.shared.update(urls: store.selectedItems.flatMap(\.urls)) }
     }
 
