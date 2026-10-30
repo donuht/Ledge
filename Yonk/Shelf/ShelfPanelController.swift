@@ -106,12 +106,14 @@ final class ShelfPanelController {
     }
 
     func show() {
+        YonkLog.write("shelf show")
         hideWorkItem?.cancel()
         position()
         panel.orderFrontRegardless()
     }
 
     func hide() {
+        YonkLog.write("shelf hide")
         hideWorkItem?.cancel()
         panel.orderOut(nil)
     }

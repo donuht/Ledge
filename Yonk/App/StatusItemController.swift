@@ -1,6 +1,6 @@
 import AppKit
 
-/// 메뉴바 아이콘. 왼쪽 클릭 = 선반 표시/숨김, 오른쪽 클릭 = 메뉴.
+/// 메뉴바 아이콘. 클릭하면 메뉴(선반 보기/숨기기·위치·나타나는 조건·설정·종료).
 @MainActor
 final class StatusItemController: NSObject {
     private let statusItem: NSStatusItem
@@ -9,6 +9,7 @@ final class StatusItemController: NSObject {
     private let toggleItem: NSMenuItem
     private let settingsWindow = SettingsWindowController()
     private var edgeMenu: NSMenu?
+    private var triggerMenu: NSMenu?
 
     init(shelf: ShelfPanelController) {
         self.shelf = shelf
@@ -20,11 +21,9 @@ final class StatusItemController: NSObject {
             let image = NSImage(systemSymbolName: "tray.and.arrow.down.fill", accessibilityDescription: "Yonk")
             image?.isTemplate = true
             button.image = image
-            button.toolTip = "Yonk — 드래그하면 선반이 나타납니다. 클릭: 선반 고정/숨김, 오른쪽 클릭: 메뉴"
-            button.target = self
-            button.action = #selector(statusButtonClicked)
-            button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+            button.toolTip = "Yonk — 파일을 끌고 화면 가장자리에 닿으면 선반이 나타납니다"
         }
+        statusItem.menu = menu
 
         toggleItem.target = self
         menu.addItem(toggleItem)
@@ -41,6 +40,18 @@ final class StatusItemController: NSObject {
         edgeItem.submenu = edgeMenu
         menu.addItem(edgeItem)
         self.edgeMenu = edgeMenu
+
+        let triggerItem = NSMenuItem(title: "나타나는 조건", action: nil, keyEquivalent: "")
+        let triggerMenu = NSMenu(title: "나타나는 조건")
+        for trigger in ShowTrigger.allCases {
+            let item = NSMenuItem(title: trigger.title, action: #selector(selectTrigger(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = trigger.rawValue
+            triggerMenu.addItem(item)
+        }
+        triggerItem.submenu = triggerMenu
+        menu.addItem(triggerItem)
+        self.triggerMenu = triggerMenu
         menu.addItem(.separator())
         let settings = NSMenuItem(title: "설정…", action: #selector(openSettings), keyEquivalent: ",")
         settings.target = self
@@ -52,17 +63,6 @@ final class StatusItemController: NSObject {
         menu.delegate = self
     }
 
-    @objc private func statusButtonClicked() {
-        guard let event = NSApp.currentEvent else { return }
-        if event.type == .rightMouseUp || event.modifierFlags.contains(.control) {
-            // 메뉴를 잠깐 붙여서 띄우고, 닫히면 떼어낸다(왼쪽 클릭은 메뉴 없이 토글).
-            statusItem.menu = menu
-            statusItem.button?.performClick(nil)
-        } else {
-            toggleShelf()
-        }
-    }
-
     @objc private func toggleShelf() {
         shelf.toggleByUser()
     }
@@ -70,6 +70,11 @@ final class StatusItemController: NSObject {
     @objc private func selectEdge(_ sender: NSMenuItem) {
         guard let raw = sender.representedObject as? String, let edge = ShelfEdge(rawValue: raw) else { return }
         AppSettings.shared.edge = edge
+    }
+
+    @objc private func selectTrigger(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String, let trigger = ShowTrigger(rawValue: raw) else { return }
+        AppSettings.shared.showTrigger = trigger
     }
 
     @objc private func openSettings() {
@@ -83,9 +88,8 @@ extension StatusItemController: NSMenuDelegate {
         for item in edgeMenu?.items ?? [] {
             item.state = (item.representedObject as? String) == AppSettings.shared.edge.rawValue ? .on : .off
         }
-    }
-
-    func menuDidClose(_ menu: NSMenu) {
-        statusItem.menu = nil
+        for item in triggerMenu?.items ?? [] {
+            item.state = (item.representedObject as? String) == AppSettings.shared.showTrigger.rawValue ? .on : .off
+        }
     }
 }

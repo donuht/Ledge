@@ -157,6 +157,7 @@ final class DraggableItemView: NSView, NSDraggingSource {
 
     override func mouseDown(with event: NSEvent) {
         mouseDownPoint = convert(event.locationInWindow, from: nil)
+        YonkLog.write("item mouseDown \(item.name)")
     }
 
     override func mouseDragged(with event: NSEvent) {
@@ -164,6 +165,7 @@ final class DraggableItemView: NSView, NSDraggingSource {
         let now = convert(event.locationInWindow, from: nil)
         guard hypot(now.x - start.x, now.y - start.y) >= 4 else { return }
         mouseDownPoint = nil
+        YonkLog.write("item drag begin \(item.name)")
         beginDrag(with: event)
     }
 
@@ -195,7 +197,12 @@ final class DraggableItemView: NSView, NSDraggingSource {
 
     func ignoreModifierKeys(for session: NSDraggingSession) -> Bool { false }
 
+    func draggingSession(_ session: NSDraggingSession, willBeginAt screenPoint: NSPoint) {
+        YonkLog.write("item session began at \(screenPoint)")
+    }
+
     func draggingSession(_ session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
+        YonkLog.write("item session ended at \(screenPoint) op=\(operation.rawValue)")
         // 어딘가에 실제로 놓였으면(복사·이동·링크 등) 선반에서 내려간다.
         if !operation.isEmpty {
             onExported?(item)

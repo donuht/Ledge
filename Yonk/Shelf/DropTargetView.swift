@@ -32,7 +32,7 @@ final class DropTargetView: NSView {
 
     override func draggingEntered(_ sender: any NSDraggingInfo) -> NSDragOperation {
         let op = operation(for: sender)
-        NSLog("Yonk drop: entered types=%@ op=%d", sender.draggingPasteboard.types?.map(\.rawValue).joined(separator: ",") ?? "-", op.rawValue)
+        YonkLog.write("drop entered types=\(sender.draggingPasteboard.types?.map(\.rawValue).joined(separator: ",") ?? "-") op=\(op.rawValue)")
         if !op.isEmpty { onTargetChanged?(true) }
         return op
     }
@@ -54,7 +54,7 @@ final class DropTargetView: NSView {
     }
 
     override func performDragOperation(_ sender: any NSDraggingInfo) -> Bool {
-        NSLog("Yonk drop: perform")
+        YonkLog.write("drop perform")
         onTargetChanged?(false)
         guard !isFromOwnWindow(sender) else { return false }
         let pb = sender.draggingPasteboard

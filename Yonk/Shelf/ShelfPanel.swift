@@ -24,5 +24,15 @@ final class ShelfPanel: NSPanel {
 
     // 드래그 중에도 마우스 이벤트를 받아야 하므로 키 윈도우가 되지 않는다.
     override var canBecomeKey: Bool { false }
+
+    override func sendEvent(_ event: NSEvent) {
+        if event.type == .leftMouseDown {
+            let hit = contentView?.hitTest(event.locationInWindow)
+            YonkLog.write("panel mouseDown at \(event.locationInWindow) hit=\(hit.map { String(describing: type(of: $0)) } ?? "nil")")
+        }
+        super.sendEvent(event)
+    }
+
+
     override var canBecomeMain: Bool { false }
 }
