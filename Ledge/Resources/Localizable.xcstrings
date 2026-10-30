@@ -212,16 +212,6 @@
         }
       }
     },
-    "로그인 시 실행": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Launch at Login"
-          }
-        }
-      }
-    },
     "클립보드 기록 켜기": {
       "localizations": {
         "en": {
@@ -1178,6 +1168,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Appears next to the cursor when you pause mid-drag and hides when empty. Quick drags between windows won't trigger it."
+          }
+        }
+      }
+    },
+    "맥을 켜면 자동으로 실행": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start automatically when the Mac starts"
           }
         }
       }

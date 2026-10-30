@@ -58,7 +58,7 @@ struct SettingsView: View {
             }
 
             Section("일반") {
-                Toggle("로그인 시 실행", isOn: Binding(
+                Toggle("맥을 켜면 자동으로 실행", isOn: Binding(
                     get: { _ = settings.launchAtLoginVersion; return settings.launchAtLogin },
                     set: { settings.launchAtLogin = $0 }
                 ))
