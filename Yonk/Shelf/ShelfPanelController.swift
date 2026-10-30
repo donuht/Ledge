@@ -7,22 +7,38 @@ final class ShelfPanelController {
     static let defaultSize = NSSize(width: 168, height: 360)
 
     let panel: ShelfPanel
+    let store: ShelfStore
+
+    private let dropView: DropTargetView
+    private let hostingView: NSHostingView<ShelfView>
+    private var isDropTargeted = false {
+        didSet { hostingView.rootView = ShelfView(store: store, isDropTargeted: isDropTargeted) }
+    }
 
     var isVisible: Bool { panel.isVisible }
 
-    init() {
+    init(store: ShelfStore = ShelfStore()) {
+        self.store = store
         panel = ShelfPanel(contentRect: NSRect(origin: .zero, size: Self.defaultSize))
-        let hosting = NSHostingView(rootView: ShelfView())
-        hosting.translatesAutoresizingMaskIntoConstraints = false
-        let root = NSView(frame: panel.contentRect(forFrameRect: panel.frame))
-        root.addSubview(hosting)
+
+        dropView = DropTargetView(frame: panel.contentRect(forFrameRect: panel.frame))
+        hostingView = NSHostingView(rootView: ShelfView(store: store, isDropTargeted: false))
+        hostingView.translatesAutoresizingMaskIntoConstraints = false
+        dropView.addSubview(hostingView)
         NSLayoutConstraint.activate([
-            hosting.leadingAnchor.constraint(equalTo: root.leadingAnchor),
-            hosting.trailingAnchor.constraint(equalTo: root.trailingAnchor),
-            hosting.topAnchor.constraint(equalTo: root.topAnchor),
-            hosting.bottomAnchor.constraint(equalTo: root.bottomAnchor),
+            hostingView.leadingAnchor.constraint(equalTo: dropView.leadingAnchor),
+            hostingView.trailingAnchor.constraint(equalTo: dropView.trailingAnchor),
+            hostingView.topAnchor.constraint(equalTo: dropView.topAnchor),
+            hostingView.bottomAnchor.constraint(equalTo: dropView.bottomAnchor),
         ])
-        panel.contentView = root
+        panel.contentView = dropView
+
+        dropView.onDrop = { [weak self] urls in
+            self?.store.add(urls: urls)
+        }
+        dropView.onTargetChanged = { [weak self] targeted in
+            self?.isDropTargeted = targeted
+        }
     }
 
     func show() {
