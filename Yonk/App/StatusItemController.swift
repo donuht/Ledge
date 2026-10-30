@@ -19,7 +19,7 @@ final class StatusItemController: NSObject {
             let image = NSImage(systemSymbolName: "tray.and.arrow.down.fill", accessibilityDescription: "Yonk")
             image?.isTemplate = true
             button.image = image
-            button.toolTip = "Yonk — 클릭: 선반 표시/숨김, 오른쪽 클릭: 메뉴"
+            button.toolTip = "Yonk — 드래그하면 선반이 나타납니다. 클릭: 선반 고정/숨김, 오른쪽 클릭: 메뉴"
             button.target = self
             button.action = #selector(statusButtonClicked)
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])
@@ -50,7 +50,7 @@ final class StatusItemController: NSObject {
     }
 
     @objc private func toggleShelf() {
-        shelf.toggle()
+        shelf.toggleByUser()
     }
 
     @objc private func openSettings() {

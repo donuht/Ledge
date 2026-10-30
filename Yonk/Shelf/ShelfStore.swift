@@ -21,6 +21,9 @@ final class ShelfStore {
     var isEmpty: Bool { items.isEmpty }
     var canRestore: Bool { !removedBatches.isEmpty }
 
+    /// 항목이 바뀔 때마다 호출된다(자동 숨김 판단용).
+    var onChange: (() -> Void)?
+
     private let defaultsKey = "shelf.itemPaths"
     private let maxRemovedBatches = 50
 
@@ -89,6 +92,7 @@ final class ShelfStore {
     private func save() {
         let paths = items.map(\.path)
         UserDefaults.standard.set(paths, forKey: defaultsKey)
+        onChange?()
     }
 
     private func load() {

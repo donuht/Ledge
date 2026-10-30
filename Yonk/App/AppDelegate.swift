@@ -26,8 +26,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let shelf = ShelfPanelController()
         shelfController = shelf
         statusItemController = StatusItemController(shelf: shelf)
-        shelf.show()
-        NSLog("Yonk: shelf shown at %@", NSStringFromRect(shelf.panel.frame))
+        shelf.showAtLaunchIfNeeded()
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
