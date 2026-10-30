@@ -106,6 +106,8 @@ final class DraggableItemView: NSView, NSDraggingSource {
 
     // 패널이 키 윈도우가 아니어도 첫 클릭부터 드래그를 시작할 수 있어야 한다.
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+    /// 불투명하지 않은 뷰는 기본적으로 mouseDown이 창 이동으로 바뀐다. 항목은 끌어내야 하므로 막는다.
+    override var mouseDownCanMoveWindow: Bool { false }
 
     // x 버튼을 제외한 모든 클릭(아이콘·이름 포함)은 줄 전체가 받아서 드래그로 이어간다.
     override func hitTest(_ point: NSPoint) -> NSView? {

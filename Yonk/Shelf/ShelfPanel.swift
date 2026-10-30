@@ -14,7 +14,7 @@ final class ShelfPanel: NSPanel {
         isFloatingPanel = true
         hidesOnDeactivate = false
         becomesKeyOnlyIfNeeded = true
-        isMovableByWindowBackground = true
+        isMovableByWindowBackground = false
         isOpaque = false
         backgroundColor = .clear
         hasShadow = true

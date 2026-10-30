@@ -5,6 +5,8 @@ import SwiftUI
 /// 받는 순서: 파일 URL → 파일 프로미스(브라우저 이미지·메일 첨부) → 이미지 데이터 → 웹 URL → 텍스트.
 /// 파일이 아닌 것은 SnippetWriter로 실제 파일을 만든 뒤 선반에 올린다.
 final class DropTargetView: NSView {
+    override var mouseDownCanMoveWindow: Bool { false }
+
     var onDrop: (([URL]) -> Void)?
     var onTargetChanged: ((Bool) -> Void)?
 
