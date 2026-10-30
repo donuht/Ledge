@@ -4,6 +4,10 @@ import SwiftUI
 /// 선반 항목 한 줄(AppKit). 줄을 끌면 파일 URL을 페이스트보드에 실어 내보내고,
 /// 내보내기가 성공하면 선반에서 제거한다. x 버튼은 별도 서브뷰라 드래그를 가로채지 않는다.
 final class DraggableItemView: NSView, NSDraggingSource {
+    /// row: 세로 목록용(아이콘 왼쪽·이름 오른쪽). card: 가로 목록용(아이콘 위·이름 아래).
+    enum Style { case row, card }
+
+    let style: Style
     var item: ShelfItem {
         didSet { if item != oldValue { refresh() } }
     }
@@ -18,9 +22,11 @@ final class DraggableItemView: NSView, NSDraggingSource {
     private var isHovered = false { didSet { closeButton.isHidden = !isHovered } }
 
     static let rowHeight: CGFloat = 44
+    static let cardSize = NSSize(width: 84, height: 84)
 
-    init(item: ShelfItem) {
+    init(item: ShelfItem, style: Style = .row) {
         self.item = item
+        self.style = style
         super.init(frame: NSRect(x: 0, y: 0, width: 160, height: Self.rowHeight))
         wantsLayer = true
         layer?.cornerRadius = 8
@@ -28,9 +34,10 @@ final class DraggableItemView: NSView, NSDraggingSource {
         iconView.imageScaling = .scaleProportionallyUpOrDown
         iconView.translatesAutoresizingMaskIntoConstraints = false
 
-        nameField.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
+        nameField.font = .systemFont(ofSize: style == .row ? NSFont.smallSystemFontSize : 10)
         nameField.lineBreakMode = .byTruncatingMiddle
         nameField.maximumNumberOfLines = 2
+        nameField.alignment = style == .row ? .natural : .center
         nameField.cell?.truncatesLastVisibleLine = true
         nameField.translatesAutoresizingMaskIntoConstraints = false
         nameField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
@@ -49,21 +56,41 @@ final class DraggableItemView: NSView, NSDraggingSource {
         addSubview(iconView)
         addSubview(nameField)
         addSubview(closeButton)
-        NSLayoutConstraint.activate([
-            iconView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
-            iconView.centerYAnchor.constraint(equalTo: centerYAnchor),
-            iconView.widthAnchor.constraint(equalToConstant: 32),
-            iconView.heightAnchor.constraint(equalToConstant: 32),
+        switch style {
+        case .row:
+            NSLayoutConstraint.activate([
+                iconView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
+                iconView.centerYAnchor.constraint(equalTo: centerYAnchor),
+                iconView.widthAnchor.constraint(equalToConstant: 32),
+                iconView.heightAnchor.constraint(equalToConstant: 32),
 
-            nameField.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 8),
-            nameField.trailingAnchor.constraint(equalTo: closeButton.leadingAnchor, constant: -4),
-            nameField.centerYAnchor.constraint(equalTo: centerYAnchor),
+                nameField.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 8),
+                nameField.trailingAnchor.constraint(equalTo: closeButton.leadingAnchor, constant: -4),
+                nameField.centerYAnchor.constraint(equalTo: centerYAnchor),
 
-            closeButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -6),
-            closeButton.centerYAnchor.constraint(equalTo: centerYAnchor),
-            closeButton.widthAnchor.constraint(equalToConstant: 18),
-            closeButton.heightAnchor.constraint(equalToConstant: 18),
-        ])
+                closeButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -6),
+                closeButton.centerYAnchor.constraint(equalTo: centerYAnchor),
+                closeButton.widthAnchor.constraint(equalToConstant: 18),
+                closeButton.heightAnchor.constraint(equalToConstant: 18),
+            ])
+        case .card:
+            NSLayoutConstraint.activate([
+                iconView.topAnchor.constraint(equalTo: topAnchor, constant: 8),
+                iconView.centerXAnchor.constraint(equalTo: centerXAnchor),
+                iconView.widthAnchor.constraint(equalToConstant: 40),
+                iconView.heightAnchor.constraint(equalToConstant: 40),
+
+                nameField.topAnchor.constraint(equalTo: iconView.bottomAnchor, constant: 4),
+                nameField.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 4),
+                nameField.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -4),
+                nameField.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -4),
+
+                closeButton.topAnchor.constraint(equalTo: topAnchor, constant: 2),
+                closeButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -2),
+                closeButton.widthAnchor.constraint(equalToConstant: 18),
+                closeButton.heightAnchor.constraint(equalToConstant: 18),
+            ])
+        }
         refresh()
     }
 
@@ -71,7 +98,10 @@ final class DraggableItemView: NSView, NSDraggingSource {
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
 
     override var intrinsicContentSize: NSSize {
-        NSSize(width: NSView.noIntrinsicMetric, height: Self.rowHeight)
+        switch style {
+        case .row: NSSize(width: NSView.noIntrinsicMetric, height: Self.rowHeight)
+        case .card: Self.cardSize
+        }
     }
 
     // 패널이 키 윈도우가 아니어도 첫 클릭부터 드래그를 시작할 수 있어야 한다.
@@ -174,11 +204,12 @@ final class DraggableItemView: NSView, NSDraggingSource {
 /// SwiftUI 목록 안에서 쓰기 위한 래퍼.
 struct DraggableItemRow: NSViewRepresentable {
     let item: ShelfItem
+    var style: DraggableItemView.Style = .row
     let onRemove: (ShelfItem) -> Void
     let onExported: (ShelfItem) -> Void
 
     func makeNSView(context: Context) -> DraggableItemView {
-        let view = DraggableItemView(item: item)
+        let view = DraggableItemView(item: item, style: style)
         view.onRemove = onRemove
         view.onExported = onExported
         return view
@@ -191,6 +222,9 @@ struct DraggableItemRow: NSViewRepresentable {
     }
 
     func sizeThatFits(_ proposal: ProposedViewSize, nsView: DraggableItemView, context: Context) -> CGSize? {
-        CGSize(width: proposal.width ?? 160, height: DraggableItemView.rowHeight)
+        switch style {
+        case .row: CGSize(width: proposal.width ?? 160, height: DraggableItemView.rowHeight)
+        case .card: DraggableItemView.cardSize
+        }
     }
 }

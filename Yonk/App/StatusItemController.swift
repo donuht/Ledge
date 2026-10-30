@@ -8,6 +8,7 @@ final class StatusItemController: NSObject {
     private let menu = NSMenu()
     private let toggleItem: NSMenuItem
     private var settingsWindow: NSWindow?
+    private var edgeMenu: NSMenu?
 
     init(shelf: ShelfPanelController) {
         self.shelf = shelf
@@ -27,6 +28,19 @@ final class StatusItemController: NSObject {
 
         toggleItem.target = self
         menu.addItem(toggleItem)
+        menu.addItem(.separator())
+
+        let edgeItem = NSMenuItem(title: "선반 위치", action: nil, keyEquivalent: "")
+        let edgeMenu = NSMenu(title: "선반 위치")
+        for edge in ShelfEdge.allCases {
+            let item = NSMenuItem(title: edge.title, action: #selector(selectEdge(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = edge.rawValue
+            edgeMenu.addItem(item)
+        }
+        edgeItem.submenu = edgeMenu
+        menu.addItem(edgeItem)
+        self.edgeMenu = edgeMenu
         menu.addItem(.separator())
         let settings = NSMenuItem(title: "설정…", action: #selector(openSettings), keyEquivalent: ",")
         settings.target = self
@@ -53,6 +67,11 @@ final class StatusItemController: NSObject {
         shelf.toggleByUser()
     }
 
+    @objc private func selectEdge(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String, let edge = ShelfEdge(rawValue: raw) else { return }
+        shelf.edge = edge
+    }
+
     @objc private func openSettings() {
         if settingsWindow == nil {
             let window = NSWindow(
@@ -64,7 +83,7 @@ final class StatusItemController: NSObject {
             window.title = "Yonk 설정"
             window.isReleasedWhenClosed = false
             window.center()
-            let label = NSTextField(wrappingLabelWithString: "설정 항목은 다음 단계(P2 자동 등장, P5 다듬기)에서 추가됩니다.")
+            let label = NSTextField(wrappingLabelWithString: "선반 위치는 메뉴바 아이콘 오른쪽 클릭 → 선반 위치에서 바꿉니다.\n나머지 설정은 다음 단계에서 추가됩니다.")
             label.frame = NSRect(x: 20, y: 70, width: 320, height: 60)
             label.alignment = .center
             window.contentView?.addSubview(label)
@@ -78,6 +97,9 @@ final class StatusItemController: NSObject {
 extension StatusItemController: NSMenuDelegate {
     func menuWillOpen(_ menu: NSMenu) {
         toggleItem.title = shelf.isVisible ? "선반 숨기기" : "선반 보기"
+        for item in edgeMenu?.items ?? [] {
+            item.state = (item.representedObject as? String) == shelf.edge.rawValue ? .on : .off
+        }
     }
 
     func menuDidClose(_ menu: NSMenu) {

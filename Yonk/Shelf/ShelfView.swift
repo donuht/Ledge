@@ -1,8 +1,10 @@
 import SwiftUI
 
 /// 선반 내용: 헤더(되살리기·전체 비우기), 항목 목록 또는 빈 상태.
+/// 왼쪽·오른쪽 가장자리는 세로 목록, 위·아래는 가로 카드 목록.
 struct ShelfView: View {
     @Bindable var store: ShelfStore
+    var edge: ShelfEdge
     var isDropTargeted: Bool
 
     var body: some View {
@@ -11,11 +13,13 @@ struct ShelfView: View {
             Divider()
             if store.isEmpty {
                 emptyState
+            } else if edge.isVertical {
+                verticalList
             } else {
-                itemList
+                horizontalList
             }
         }
-        .frame(minWidth: 120, minHeight: 200)
+        .frame(minWidth: 120, minHeight: 100)
         .background(.regularMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(
@@ -56,16 +60,34 @@ struct ShelfView: View {
         .padding(.vertical, 6)
     }
 
-    private var itemList: some View {
+    private var verticalList: some View {
         ScrollView {
             LazyVStack(spacing: 2) {
                 ForEach(store.items) { item in
                     DraggableItemRow(
                         item: item,
+                        style: .row,
                         onRemove: { store.remove($0) },
                         onExported: { store.remove($0) }
                     )
-                    .frame(height: 44)
+                    .frame(height: DraggableItemView.rowHeight)
+                }
+            }
+            .padding(6)
+        }
+    }
+
+    private var horizontalList: some View {
+        ScrollView(.horizontal) {
+            LazyHStack(spacing: 2) {
+                ForEach(store.items) { item in
+                    DraggableItemRow(
+                        item: item,
+                        style: .card,
+                        onRemove: { store.remove($0) },
+                        onExported: { store.remove($0) }
+                    )
+                    .frame(width: DraggableItemView.cardSize.width, height: DraggableItemView.cardSize.height)
                 }
             }
             .padding(6)
@@ -73,22 +95,27 @@ struct ShelfView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 8) {
-            Spacer()
+        VStack(spacing: 6) {
+            Spacer(minLength: 0)
             Image(systemName: "arrow.down.to.line")
-                .font(.title2)
+                .font(edge.isVertical ? .title2 : .body)
                 .foregroundStyle(.tertiary)
-            Text("파일을 여기에\n떨어뜨리세요")
+            Text(edge.isVertical ? "파일을 여기에\n떨어뜨리세요" : "파일을 여기에 떨어뜨리세요")
                 .font(.caption)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.tertiary)
-            Spacer()
+            Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity)
     }
 }
 
-#Preview {
-    ShelfView(store: ShelfStore(loadPersisted: false), isDropTargeted: false)
+#Preview("세로") {
+    ShelfView(store: ShelfStore(loadPersisted: false), edge: .left, isDropTargeted: false)
         .frame(width: 168, height: 360)
+}
+
+#Preview("가로") {
+    ShelfView(store: ShelfStore(loadPersisted: false), edge: .bottom, isDropTargeted: false)
+        .frame(width: 440, height: 124)
 }

@@ -4,22 +4,30 @@ import SwiftUI
 /// 선반 패널의 생성·위치·표시 상태를 관리한다.
 @MainActor
 final class ShelfPanelController {
-    static let defaultSize = NSSize(width: 168, height: 360)
-
     let panel: ShelfPanel
     let store: ShelfStore
 
     private let dropView: DropTargetView
     private let hostingView: NSHostingView<ShelfView>
-    private var isDropTargeted = false {
-        didSet { hostingView.rootView = ShelfView(store: store, isDropTargeted: isDropTargeted) }
-    }
-
     private let dragMonitor = DragMonitor()
     private var hideWorkItem: DispatchWorkItem?
 
     /// 사용자가 메뉴바에서 직접 켠 경우. 직접 끌 때까지 자동 숨김을 하지 않는다.
     private var isPinnedByUser = false
+
+    private var isDropTargeted = false {
+        didSet { refreshRootView() }
+    }
+
+    /// 선반이 붙는 가장자리. 바꾸면 저장되고, 보이는 중이면 즉시 옮겨진다.
+    var edge: ShelfEdge {
+        didSet {
+            guard edge != oldValue else { return }
+            edge.save()
+            refreshRootView()
+            if isVisible { position() }
+        }
+    }
 
     var isVisible: Bool { panel.isVisible }
 
@@ -28,10 +36,11 @@ final class ShelfPanelController {
 
     init(store: ShelfStore = ShelfStore()) {
         self.store = store
-        panel = ShelfPanel(contentRect: NSRect(origin: .zero, size: Self.defaultSize))
+        edge = ShelfEdge.saved
+        panel = ShelfPanel(contentRect: NSRect(origin: .zero, size: edge.panelSize))
 
         dropView = DropTargetView(frame: panel.contentRect(forFrameRect: panel.frame))
-        hostingView = NSHostingView(rootView: ShelfView(store: store, isDropTargeted: false))
+        hostingView = NSHostingView(rootView: ShelfView(store: store, edge: edge, isDropTargeted: false))
         hostingView.translatesAutoresizingMaskIntoConstraints = false
         dropView.addSubview(hostingView)
         NSLayoutConstraint.activate([
@@ -64,6 +73,10 @@ final class ShelfPanelController {
         dragMonitor.start()
     }
 
+    private func refreshRootView() {
+        hostingView.rootView = ShelfView(store: store, edge: edge, isDropTargeted: isDropTargeted)
+    }
+
     /// 실행 직후: 내용이 있으면 보여 주고, 비어 있으면 숨긴 채 드래그를 기다린다.
     func showAtLaunchIfNeeded() {
         if !store.isEmpty { show() }
@@ -71,7 +84,7 @@ final class ShelfPanelController {
 
     func show() {
         hideWorkItem?.cancel()
-        positionAtLeftEdge()
+        position()
         panel.orderFrontRegardless()
     }
 
@@ -101,16 +114,11 @@ final class ShelfPanelController {
         DispatchQueue.main.asyncAfter(deadline: .now() + Self.autoHideDelay, execute: work)
     }
 
-    /// 마우스가 있는 화면의 왼쪽 가장자리, 세로 중앙.
-    private func positionAtLeftEdge() {
+    /// 마우스가 있는 화면의 설정된 가장자리에 붙인다.
+    private func position() {
         let mouse = NSEvent.mouseLocation
         let screen = NSScreen.screens.first { NSMouseInRect(mouse, $0.frame, false) } ?? NSScreen.main
         guard let visible = screen?.visibleFrame else { return }
-        let size = panel.frame.size
-        let origin = NSPoint(
-            x: visible.minX,
-            y: visible.midY - size.height / 2
-        )
-        panel.setFrameOrigin(origin)
+        panel.setFrame(edge.frame(in: visible, size: edge.panelSize), display: true)
     }
 }
