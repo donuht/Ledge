@@ -2,11 +2,13 @@ import AppKit
 
 /// 다른 앱에서 드래그가 시작·종료되는 것을 감지한다. 접근성 권한 불필요.
 /// 시작: 전역 leftMouseDragged + 드래그 페이스트보드 changeCount 변화.
-/// 종료: 0.1초마다 마우스 버튼이 떼어졌는지 확인(드래그 세션 중엔 mouseUp이 전역 모니터에 안 올 수 있음).
+/// 종료: 0.05초마다 마우스 버튼이 떼어졌는지 확인(드래그 세션 중엔 mouseUp이 전역 모니터에 안 올 수 있음).
 @MainActor
 final class DragMonitor {
     var onDragBegan: (() -> Void)?
     var onDragEnded: (() -> Void)?
+    /// 드래그 중 주기적으로 호출된다(마우스 위치, 화면 좌표).
+    var onDragMoved: ((NSPoint) -> Void)?
 
     private(set) var isDragging = false
 
@@ -53,13 +55,16 @@ final class DragMonitor {
         isDragging = true
         onDragBegan?()
         endTimer?.invalidate()
-        endTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
-            MainActor.assumeIsolated { self?.checkDragEnded() }
+        endTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.tick() }
         }
     }
 
-    private func checkDragEnded() {
-        guard NSEvent.pressedMouseButtons & 1 == 0 else { return }
+    private func tick() {
+        guard NSEvent.pressedMouseButtons & 1 == 0 else {
+            onDragMoved?(NSEvent.mouseLocation)
+            return
+        }
         endTimer?.invalidate()
         endTimer = nil
         isDragging = false

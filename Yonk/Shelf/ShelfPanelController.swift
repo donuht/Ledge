@@ -15,6 +15,12 @@ final class ShelfPanelController {
     /// 사용자가 메뉴바에서 직접 켠 경우. 직접 끌 때까지 자동 숨김을 하지 않는다.
     private var isPinnedByUser = false
 
+    /// 지금 진행 중인 드래그가 무시 앱에서 시작됐는지.
+    private var isCurrentDragIgnored = false
+
+    /// 가장자리 감지 두께(pt). 포인터는 화면 밖으로 못 나가므로 가장자리에 닿으면 좌표가 경계값이 된다.
+    static let edgeThreshold: CGFloat = 6
+
     private var isDropTargeted = false {
         didSet { refreshRootView() }
     }
@@ -52,17 +58,27 @@ final class ShelfPanelController {
             self?.isDropTargeted = targeted
         }
 
-        // 평소엔 숨어 있다가, 다른 앱에서 드래그가 시작되면 나타나고 끝난 뒤 비어 있으면 사라진다.
+        // 평소엔 숨어 있다가, 다른 앱에서 드래그하는 동안 나타나고(설정에 따라 시작 즉시 또는
+        // 가장자리에 닿았을 때), 끝난 뒤 비어 있으면 사라진다.
         dragMonitor.onDragBegan = { [weak self] in
             guard let self else { return }
-            // 무시 목록에 있는 앱이 맨 앞이면 나타나지 않는다.
+            // 무시 목록에 있는 앱이 맨 앞이면 이번 드래그에서는 나타나지 않는다.
             let front = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
-            if AppSettings.shared.isIgnored(bundleID: front) { return }
+            isCurrentDragIgnored = AppSettings.shared.isIgnored(bundleID: front)
+            if isCurrentDragIgnored { return }
             hideWorkItem?.cancel()
-            if !isVisible { show() }
+            if AppSettings.shared.showTrigger == .dragStart, !isVisible { show() }
+        }
+        dragMonitor.onDragMoved = { [weak self] mouse in
+            guard let self, !isCurrentDragIgnored, !isVisible else { return }
+            guard AppSettings.shared.showTrigger == .edge, Self.isAtEdge(mouse, edge: edge) else { return }
+            hideWorkItem?.cancel()
+            show()
         }
         dragMonitor.onDragEnded = { [weak self] in
-            self?.scheduleAutoHideIfEmpty()
+            guard let self else { return }
+            isCurrentDragIgnored = false
+            scheduleAutoHideIfEmpty()
         }
         store.onChange = { [weak self] in
             self?.scheduleAutoHideIfEmpty()
@@ -119,6 +135,18 @@ final class ShelfPanelController {
         }
         hideWorkItem = work
         DispatchQueue.main.asyncAfter(deadline: .now() + Self.autoHideDelay, execute: work)
+    }
+
+    /// 마우스가 있는 화면의 `edge` 쪽 경계에 닿았는지. 메뉴바·독까지 포함한 전체 프레임 기준.
+    static func isAtEdge(_ mouse: NSPoint, edge: ShelfEdge) -> Bool {
+        guard let screen = NSScreen.screens.first(where: { NSMouseInRect(mouse, $0.frame, false) }) else { return false }
+        let f = screen.frame
+        switch edge {
+        case .left: return mouse.x <= f.minX + edgeThreshold
+        case .right: return mouse.x >= f.maxX - edgeThreshold
+        case .top: return mouse.y >= f.maxY - edgeThreshold
+        case .bottom: return mouse.y <= f.minY + edgeThreshold
+        }
     }
 
     /// 마우스가 있는 화면의 설정된 가장자리에 붙인다.

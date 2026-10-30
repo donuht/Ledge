@@ -15,7 +15,10 @@ struct SettingsView: View {
                     ForEach(ShelfEdge.allCases, id: \.self) { Text($0.title).tag($0) }
                 }
                 .pickerStyle(.segmented)
-                Text("드래그를 시작하면 이 가장자리에 나타나고, 비어 있으면 사라집니다.")
+                Picker("나타나는 조건", selection: $settings.showTrigger) {
+                    ForEach(ShowTrigger.allCases, id: \.self) { Text($0.title).tag($0) }
+                }
+                Text(triggerHelp)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -59,6 +62,13 @@ struct SettingsView: View {
         .formStyle(.grouped)
         .frame(width: 440)
         .onAppear(perform: refreshRunningApps)
+    }
+
+    private var triggerHelp: String {
+        switch settings.showTrigger {
+        case .dragStart: "드래그를 시작하면 바로 나타나고, 비어 있으면 사라집니다."
+        case .edge: "파일을 끌고 화면의 \(settings.edge.title) 가장자리에 닿으면 나타나고, 비어 있으면 사라집니다."
+        }
     }
 
     @ViewBuilder

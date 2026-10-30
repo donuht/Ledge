@@ -19,6 +19,14 @@ final class AppSettings {
         }
     }
 
+    /// 드래그 중 선반이 나타나는 조건.
+    var showTrigger: ShowTrigger {
+        didSet {
+            guard showTrigger != oldValue else { return }
+            showTrigger.save()
+        }
+    }
+
     /// 이 앱들이 맨 앞일 때는 드래그해도 선반이 나타나지 않는다(번들 ID).
     var ignoredBundleIDs: [String] {
         didSet { UserDefaults.standard.set(ignoredBundleIDs, forKey: Keys.ignoredBundleIDs) }
@@ -45,6 +53,7 @@ final class AppSettings {
 
     private init() {
         edge = ShelfEdge.saved
+        showTrigger = ShowTrigger.saved
         ignoredBundleIDs = UserDefaults.standard.stringArray(forKey: Keys.ignoredBundleIDs) ?? []
     }
 
