@@ -6,7 +6,7 @@ final class ShelfPanel: NSPanel {
     init(contentRect: NSRect) {
         super.init(
             contentRect: contentRect,
-            styleMask: [.nonactivatingPanel, .borderless, .utilityWindow],
+            styleMask: [.nonactivatingPanel, .borderless, .utilityWindow, .resizable],
             backing: .buffered,
             defer: false
         )

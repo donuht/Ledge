@@ -17,10 +17,6 @@ enum ShelfEdge: String, CaseIterable, Sendable {
 
     var isVertical: Bool { self == .left || self == .right }
 
-    var panelSize: NSSize {
-        isVertical ? NSSize(width: 168, height: 360) : NSSize(width: 440, height: 124)
-    }
-
     static var saved: ShelfEdge {
         UserDefaults.standard.string(forKey: defaultsKey).flatMap(ShelfEdge.init(rawValue:)) ?? .left
     }

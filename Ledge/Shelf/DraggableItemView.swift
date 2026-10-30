@@ -334,7 +334,14 @@ final class DraggableItemView: NSView, NSDraggingSource {
         menu.addItem(.separator())
         menu.addItem(withTitle: "Finder에서 보기", action: #selector(revealInFinder), keyEquivalent: "").target = self
         menu.addItem(withTitle: "경로 복사\(plural)", action: #selector(copyPaths), keyEquivalent: "").target = self
+        menu.addItem(withTitle: "공유…", action: #selector(share), keyEquivalent: "").target = self
         menu.addItem(.separator())
+        if !item.isStack, targets.count == 1 {
+            menu.addItem(withTitle: "다른 위치에 복사…", action: #selector(copyToLocation), keyEquivalent: "").target = self
+            menu.addItem(withTitle: "다른 위치로 이동…", action: #selector(moveToLocation), keyEquivalent: "").target = self
+            menu.addItem(withTitle: "이름 변경…", action: #selector(rename), keyEquivalent: "").target = self
+            menu.addItem(.separator())
+        }
 
         let allLocked = targets.allSatisfy(\.isLocked)
         menu.addItem(withTitle: allLocked ? "잠금 해제" : "잠금", action: #selector(toggleLock), keyEquivalent: "").target = self
@@ -403,6 +410,79 @@ final class DraggableItemView: NSView, NSDraggingSource {
         let pb = NSPasteboard.general
         pb.clearContents()
         pb.setString(targetURLs.map { $0.path(percentEncoded: false) }.joined(separator: "\n"), forType: .string)
+    }
+
+    // MARK: - 공유 (C4) · 복사/이동/이름 변경 (C5)
+
+    @objc private func share() {
+        let picker = NSSharingServicePicker(items: targetURLs)
+        picker.show(relativeTo: iconView.frame, of: self, preferredEdge: .maxX)
+    }
+
+    private func runSavePanel(title: String, prompt: String, completion: @escaping @MainActor (URL) -> Void) {
+        let panel = NSSavePanel()
+        panel.title = title
+        panel.prompt = prompt
+        panel.nameFieldStringValue = item.name
+        panel.directoryURL = item.url.deletingLastPathComponent()
+        panel.canCreateDirectories = true
+        panel.level = .floating
+        NSApp.activate()
+        panel.begin { response in
+            guard response == .OK, let url = panel.url else { return }
+            completion(url)
+        }
+    }
+
+    @objc private func copyToLocation() {
+        let source = item.url
+        runSavePanel(title: "다른 위치에 복사", prompt: "복사") { destination in
+            do {
+                if FileManager.default.fileExists(atPath: destination.path) { try FileManager.default.removeItem(at: destination) }
+                try FileManager.default.copyItem(at: source, to: destination)
+            } catch {
+                NSAlert(error: error).runModal()
+            }
+        }
+    }
+
+    @objc private func moveToLocation() {
+        let source = item.url
+        let id = item.id
+        runSavePanel(title: "다른 위치로 이동", prompt: "이동") { [weak self] destination in
+            do {
+                if FileManager.default.fileExists(atPath: destination.path) { try FileManager.default.removeItem(at: destination) }
+                try FileManager.default.moveItem(at: source, to: destination)
+                self?.store?.replace(id: id, url: source, with: destination)
+            } catch {
+                NSAlert(error: error).runModal()
+            }
+        }
+    }
+
+    @objc private func rename() {
+        let source = item.url
+        let id = item.id
+        let alert = NSAlert()
+        alert.messageText = "이름 변경"
+        alert.informativeText = source.lastPathComponent
+        alert.addButton(withTitle: "변경")
+        alert.addButton(withTitle: "취소")
+        let field = NSTextField(string: source.lastPathComponent)
+        field.frame = NSRect(x: 0, y: 0, width: 280, height: 24)
+        alert.accessoryView = field
+        alert.window.initialFirstResponder = field
+        NSApp.activate()
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        let newName = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !newName.isEmpty, newName != source.lastPathComponent, !newName.contains("/") else { return }
+        let destination = source.deletingLastPathComponent().appendingPathComponent(newName)
+        do {
+            try FileManager.default.moveItem(at: source, to: destination)
+            store?.replace(id: id, url: source, with: destination)
+        } catch {
+            NSAlert(error: error).runModal()
+        }
     }
 
     @objc private func toggleLock() {

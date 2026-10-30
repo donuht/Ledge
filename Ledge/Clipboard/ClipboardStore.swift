@@ -8,8 +8,6 @@ import Observation
 final class ClipboardStore {
     private(set) var entries: [ClipboardEntry] = []
 
-    /// 고정되지 않은 항목의 최대 개수(P5에서 설정으로 뺄 예정).
-    static let maxUnpinned = 500
     static let maxTextLength = 200_000
 
     static var directory: URL {
@@ -133,20 +131,27 @@ final class ClipboardStore {
         }
     }
 
-    private func trim() {
+    /// 설정의 보관 개수·기간을 넘는 고정되지 않은 항목을 버린다.
+    func trim() {
+        let maxItems = AppSettings.shared.clipboardMaxItems
+        let maxAge = AppSettings.shared.clipboardMaxAgeDays
+        let cutoff = maxAge > 0 ? Date().addingTimeInterval(-Double(maxAge) * 86_400) : Date.distantPast
         var unpinned = 0
         var kept: [ClipboardEntry] = []
         for entry in entries {
             if entry.isPinned {
                 kept.append(entry)
-            } else if unpinned < Self.maxUnpinned {
+            } else if (maxItems == 0 || unpinned < maxItems), entry.date >= cutoff {
                 unpinned += 1
                 kept.append(entry)
             } else if let file = entry.imageFile {
                 try? FileManager.default.removeItem(at: Self.directory.appendingPathComponent(file))
             }
         }
-        entries = kept
+        if kept.count != entries.count {
+            entries = kept
+            scheduleSave()
+        }
     }
 
     // MARK: - 저장
@@ -170,5 +175,6 @@ final class ClipboardStore {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         entries = (try? decoder.decode([ClipboardEntry].self, from: data)) ?? []
+        trim()
     }
 }

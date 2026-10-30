@@ -16,12 +16,29 @@ struct SettingsView: View {
                     ForEach(ShelfEdge.allCases, id: \.self) { Text($0.title).tag($0) }
                 }
                 .pickerStyle(.segmented)
+                Picker("크기", selection: $settings.size) {
+                    ForEach(ShelfSize.allCases, id: \.self) { size in
+                        if size != .custom || settings.size == .custom { Text(size.title).tag(size) }
+                    }
+                }
+                .pickerStyle(.segmented)
+                Text("선반 안쪽 모서리를 끌어 직접 늘일 수도 있습니다.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 Picker("나타나는 조건", selection: $settings.showTrigger) {
                     ForEach(ShowTrigger.allCases, id: \.self) { Text($0.title).tag($0) }
                 }
                 Text(triggerHelp)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                HStack {
+                    Slider(value: $settings.autoHideDelay, in: 0.2...3, step: 0.1) {
+                        Text("비면 사라지기까지")
+                    }
+                    Text(String(format: "%.1f초", settings.autoHideDelay))
+                        .monospacedDigit()
+                        .frame(width: 44, alignment: .trailing)
+                }
             }
 
             Section("단축키") {
@@ -41,6 +58,18 @@ struct SettingsView: View {
                 Toggle("클립보드 기록 켜기", isOn: $settings.clipboardHistoryEnabled)
                 if settings.clipboardHistoryEnabled {
                     KeyboardShortcuts.Recorder("기록 창 열기", name: .showClipboardHistory)
+                    Picker("보관 개수", selection: $settings.clipboardMaxItems) {
+                        Text("100개").tag(100)
+                        Text("500개").tag(500)
+                        Text("1,000개").tag(1000)
+                        Text("무제한").tag(0)
+                    }
+                    Picker("보관 기간", selection: $settings.clipboardMaxAgeDays) {
+                        Text("하루").tag(1)
+                        Text("일주일").tag(7)
+                        Text("한 달").tag(30)
+                        Text("무제한").tag(0)
+                    }
                     clipboardIgnoredList
                     HStack {
                         Picker("제외 앱 추가", selection: $selectedClipboardAppToAdd) {
@@ -90,7 +119,7 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 440, height: 640)
+        .frame(width: 460, height: 760)
         .onAppear(perform: refreshRunningApps)
     }
 
@@ -169,7 +198,7 @@ final class SettingsWindowController {
             window.styleMask = [.titled, .closable]
             window.isReleasedWhenClosed = false
             // 그룹 Form은 고유 높이가 없어 창이 제목줄만 남도록 줄어든다. 크기를 명시한다.
-            window.setContentSize(NSSize(width: 440, height: 640))
+            window.setContentSize(NSSize(width: 460, height: 760))
             window.center()
             self.window = window
         }

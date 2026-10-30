@@ -31,13 +31,13 @@ final class ShelfPanelController {
 
     var isVisible: Bool { panel.isVisible }
 
-    /// 비었을 때 자동으로 숨기기까지의 지연(초).
-    static let autoHideDelay: TimeInterval = 0.5
+    private var sizeObserver: (any NSObjectProtocol)?
+    private var resizeDelegate: ResizeDelegate?
 
     init(store: ShelfStore = ShelfStore()) {
         self.store = store
         let edge = ShelfEdge.saved
-        panel = ShelfPanel(contentRect: NSRect(origin: .zero, size: edge.panelSize))
+        panel = ShelfPanel(contentRect: NSRect(origin: .zero, size: AppSettings.shared.panelSize(for: edge)))
 
         dropView = DropTargetView(frame: panel.contentRect(forFrameRect: panel.frame))
         hostingView = NSHostingView(rootView: ShelfView(store: store, edge: edge, isDropTargeted: false))
@@ -91,6 +91,19 @@ final class ShelfPanelController {
             scheduleAutoHideIfEmpty()
         }
         dragMonitor.start()
+
+        sizeObserver = NotificationCenter.default.addObserver(
+            forName: AppSettings.sizeDidChange, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self, !self.isLiveResizing else { return }
+                if self.isVisible { self.position() }
+            }
+        }
+        let resizeDelegate = ResizeDelegate { [weak self] in self?.liveResizeEnded() }
+        self.resizeDelegate = resizeDelegate
+        panel.delegate = resizeDelegate
+        applyMinSize()
 
         edgeObserver = NotificationCenter.default.addObserver(
             forName: AppSettings.edgeDidChange, object: nil, queue: .main
@@ -157,7 +170,7 @@ final class ShelfPanelController {
             hide()
         }
         hideWorkItem = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + Self.autoHideDelay, execute: work)
+        DispatchQueue.main.asyncAfter(deadline: .now() + AppSettings.shared.autoHideDelay, execute: work)
     }
 
     /// 마우스가 있는 화면의 `edge` 쪽 경계에 닿았는지. 메뉴바·독까지 포함한 전체 프레임 기준.
@@ -172,11 +185,36 @@ final class ShelfPanelController {
         }
     }
 
+    // MARK: - 크기 조절 (A11)
+
+    private var isLiveResizing: Bool { panel.inLiveResize }
+
+    private func applyMinSize() {
+        panel.minSize = edge.isVertical ? ShelfSize.minVertical : ShelfSize.minHorizontal
+    }
+
+    /// 모서리를 끌어 크기를 바꾸면 그 치수를 기억하고(프리셋 → 직접 조절) 가장자리에 다시 붙인다.
+    private func liveResizeEnded() {
+        let newSize = panel.frame.size
+        guard newSize != AppSettings.shared.panelSize(for: edge) else { return }
+        AppSettings.shared.setCustomSize(newSize, for: edge)
+        position()
+    }
+
+    /// 창 델리게이트: 라이브 리사이즈 종료만 받는다.
+    @MainActor
+    private final class ResizeDelegate: NSObject, NSWindowDelegate {
+        let onEnd: () -> Void
+        init(onEnd: @escaping () -> Void) { self.onEnd = onEnd }
+        func windowDidEndLiveResize(_ notification: Notification) { onEnd() }
+    }
+
     /// 마우스가 있는 화면의 설정된 가장자리에 붙인다.
     private func position() {
         let mouse = NSEvent.mouseLocation
         let screen = NSScreen.screens.first { NSMouseInRect(mouse, $0.frame, false) } ?? NSScreen.main
         guard let visible = screen?.visibleFrame else { return }
-        panel.setFrame(edge.frame(in: visible, size: edge.panelSize), display: true)
+        panel.setFrame(edge.frame(in: visible, size: AppSettings.shared.panelSize(for: edge)), display: true)
+        applyMinSize()
     }
 }

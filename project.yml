@@ -42,6 +42,15 @@ targets:
         NSPrincipalClass: NSApplication
         CFBundleDevelopmentRegion: ko
         NSAppleEventsUsageDescription: "Finder에서 선택한 파일을 선반에 추가하기 위해 Finder와 통신합니다."
+        NSServices:
+          - NSMenuItem:
+              default: "Ledge에 추가"
+            NSMessage: addToShelf
+            NSPortName: Ledge
+            NSSendTypes:
+              - public.file-url
+            NSRequiredContext:
+              NSServiceCategory: public.item
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.jasonhwangfilm.ledge

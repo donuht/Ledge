@@ -10,6 +10,7 @@ final class StatusItemController: NSObject {
     private let settingsWindow = SettingsWindowController()
     private var edgeMenu: NSMenu?
     private var triggerMenu: NSMenu?
+    private var sizeMenu: NSMenu?
     private let clipboardItem: NSMenuItem
     weak var clipboard: ClipboardController?
 
@@ -48,6 +49,18 @@ final class StatusItemController: NSObject {
         edgeItem.submenu = edgeMenu
         menu.addItem(edgeItem)
         self.edgeMenu = edgeMenu
+
+        let sizeItem = NSMenuItem(title: "선반 크기", action: nil, keyEquivalent: "")
+        let sizeMenu = NSMenu(title: "선반 크기")
+        for size in ShelfSize.allCases where size != .custom {
+            let item = NSMenuItem(title: size.title, action: #selector(selectSize(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = size.rawValue
+            sizeMenu.addItem(item)
+        }
+        sizeItem.submenu = sizeMenu
+        menu.addItem(sizeItem)
+        self.sizeMenu = sizeMenu
 
         let triggerItem = NSMenuItem(title: "나타나는 조건", action: nil, keyEquivalent: "")
         let triggerMenu = NSMenu(title: "나타나는 조건")
@@ -88,6 +101,11 @@ final class StatusItemController: NSObject {
         AppSettings.shared.edge = edge
     }
 
+    @objc private func selectSize(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String, let size = ShelfSize(rawValue: raw) else { return }
+        AppSettings.shared.size = size
+    }
+
     @objc private func selectTrigger(_ sender: NSMenuItem) {
         guard let raw = sender.representedObject as? String, let trigger = ShowTrigger(rawValue: raw) else { return }
         AppSettings.shared.showTrigger = trigger
@@ -104,6 +122,9 @@ extension StatusItemController: NSMenuDelegate {
         clipboardItem.isHidden = !AppSettings.shared.clipboardHistoryEnabled
         for item in edgeMenu?.items ?? [] {
             item.state = (item.representedObject as? String) == AppSettings.shared.edge.rawValue ? .on : .off
+        }
+        for item in sizeMenu?.items ?? [] {
+            item.state = (item.representedObject as? String) == AppSettings.shared.size.rawValue ? .on : .off
         }
         for item in triggerMenu?.items ?? [] {
             item.state = (item.representedObject as? String) == AppSettings.shared.showTrigger.rawValue ? .on : .off

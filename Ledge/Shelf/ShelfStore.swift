@@ -133,6 +133,16 @@ final class ShelfStore {
     func selectAll() { selectedIDs = Set(items.map(\.id)) }
     func clearSelection() { selectedIDs.removeAll() }
 
+    // MARK: - 경로 바꾸기 (이동·이름 변경 뒤)
+
+    func replace(id: ShelfItem.ID, url old: URL, with new: URL) {
+        guard let index = items.firstIndex(where: { $0.id == id }) else { return }
+        let item = items[index]
+        let urls = item.urls.map { $0 == old.standardizedFileURL ? new : $0 }
+        items[index] = ShelfItem(id: item.id, urls: urls, isLocked: item.isLocked)
+        save()
+    }
+
     // MARK: - 잠금
 
     func toggleLock(id: ShelfItem.ID) {

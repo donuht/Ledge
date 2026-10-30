@@ -19,6 +19,50 @@ final class AppSettings {
         }
     }
 
+    static let sizeDidChange = Notification.Name("com.jasonhwangfilm.ledge.sizeDidChange")
+
+    /// 선반 크기 프리셋.
+    var size: ShelfSize {
+        didSet {
+            guard size != oldValue else { return }
+            UserDefaults.standard.set(size.rawValue, forKey: Keys.size)
+            NotificationCenter.default.post(name: Self.sizeDidChange, object: nil)
+        }
+    }
+    /// 모서리를 끌어 정한 치수(세로·가로 따로). 프리셋이 `custom`일 때 쓴다.
+    private var customVertical: NSSize
+    private var customHorizontal: NSSize
+
+    func panelSize(for edge: ShelfEdge) -> NSSize {
+        if let preset = size.size(vertical: edge.isVertical) { return preset }
+        return edge.isVertical ? customVertical : customHorizontal
+    }
+
+    /// 사용자가 끌어서 바꾼 크기를 기억하고 프리셋을 `custom`으로 바꾼다.
+    func setCustomSize(_ newSize: NSSize, for edge: ShelfEdge) {
+        if edge.isVertical {
+            customVertical = newSize
+            UserDefaults.standard.set([newSize.width, newSize.height], forKey: Keys.customVertical)
+        } else {
+            customHorizontal = newSize
+            UserDefaults.standard.set([newSize.width, newSize.height], forKey: Keys.customHorizontal)
+        }
+        size = .custom
+    }
+
+    /// 비었을 때 사라지기까지의 지연(초).
+    var autoHideDelay: Double {
+        didSet { UserDefaults.standard.set(autoHideDelay, forKey: Keys.autoHideDelay) }
+    }
+
+    /// 클립보드 보관 개수(0 = 무제한)와 기간(일, 0 = 무제한).
+    var clipboardMaxItems: Int {
+        didSet { UserDefaults.standard.set(clipboardMaxItems, forKey: Keys.clipboardMaxItems) }
+    }
+    var clipboardMaxAgeDays: Int {
+        didSet { UserDefaults.standard.set(clipboardMaxAgeDays, forKey: Keys.clipboardMaxAgeDays) }
+    }
+
     /// 드래그 중 선반이 나타나는 조건.
     var showTrigger: ShowTrigger {
         didSet {
@@ -67,11 +111,28 @@ final class AppSettings {
         static let ignoredBundleIDs = "behavior.ignoredBundleIDs"
         static let clipboardEnabled = "clipboard.enabled"
         static let clipboardIgnored = "clipboard.ignoredBundleIDs"
+        static let size = "shelf.size"
+        static let customVertical = "shelf.customSize.vertical"
+        static let customHorizontal = "shelf.customSize.horizontal"
+        static let autoHideDelay = "behavior.autoHideDelay"
+        static let clipboardMaxItems = "clipboard.maxItems"
+        static let clipboardMaxAgeDays = "clipboard.maxAgeDays"
     }
 
     private init() {
         edge = ShelfEdge.saved
         showTrigger = ShowTrigger.saved
+        let d = UserDefaults.standard
+        size = d.string(forKey: Keys.size).flatMap(ShelfSize.init(rawValue:)) ?? .medium
+        func loadSize(_ key: String, fallback: NSSize) -> NSSize {
+            guard let arr = d.array(forKey: key) as? [Double], arr.count == 2 else { return fallback }
+            return NSSize(width: arr[0], height: arr[1])
+        }
+        customVertical = loadSize(Keys.customVertical, fallback: ShelfSize.medium.size(vertical: true)!)
+        customHorizontal = loadSize(Keys.customHorizontal, fallback: ShelfSize.medium.size(vertical: false)!)
+        autoHideDelay = d.object(forKey: Keys.autoHideDelay) as? Double ?? 0.5
+        clipboardMaxItems = d.object(forKey: Keys.clipboardMaxItems) as? Int ?? 500
+        clipboardMaxAgeDays = d.object(forKey: Keys.clipboardMaxAgeDays) as? Int ?? 30
         ignoredBundleIDs = UserDefaults.standard.stringArray(forKey: Keys.ignoredBundleIDs) ?? []
         clipboardHistoryEnabled = UserDefaults.standard.bool(forKey: Keys.clipboardEnabled)
         clipboardIgnoredBundleIDs = UserDefaults.standard.stringArray(forKey: Keys.clipboardIgnored) ?? Self.defaultClipboardIgnored
