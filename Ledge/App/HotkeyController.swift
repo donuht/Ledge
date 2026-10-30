@@ -54,7 +54,7 @@ enum FinderSelection {
     static func currentURLs() -> [URL] {
         var error: NSDictionary?
         guard let result = NSAppleScript(source: script)?.executeAndReturnError(&error) else {
-            NSLog("Yonk: Finder 선택 읽기 실패: \(error ?? [:])")
+            NSLog("Ledge: Finder 선택 읽기 실패: \(error ?? [:])")
             return []
         }
         var urls: [URL] = []

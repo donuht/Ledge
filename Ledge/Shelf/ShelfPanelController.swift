@@ -126,14 +126,14 @@ final class ShelfPanelController {
     }
 
     func show() {
-        YonkLog.write("shelf show")
+        LedgeLog.write("shelf show")
         hideWorkItem?.cancel()
         position()
         panel.orderFrontRegardless()
     }
 
     func hide() {
-        YonkLog.write("shelf hide")
+        LedgeLog.write("shelf hide")
         hideWorkItem?.cancel()
         QuickLookController.shared.close()
         panel.orderOut(nil)

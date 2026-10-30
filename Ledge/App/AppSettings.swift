@@ -8,7 +8,7 @@ import ServiceManagement
 final class AppSettings {
     static let shared = AppSettings()
 
-    static let edgeDidChange = Notification.Name("com.jasonhwangfilm.yonk.edgeDidChange")
+    static let edgeDidChange = Notification.Name("com.jasonhwangfilm.ledge.edgeDidChange")
 
     /// 선반이 붙는 가장자리.
     var edge: ShelfEdge {
@@ -39,7 +39,7 @@ final class AppSettings {
             do {
                 if newValue { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
             } catch {
-                NSLog("Yonk: 로그인 항목 변경 실패: \(error)")
+                NSLog("Ledge: 로그인 항목 변경 실패: \(error)")
             }
             launchAtLoginVersion += 1
         }

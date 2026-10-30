@@ -18,10 +18,10 @@ final class StatusItemController: NSObject {
         super.init()
 
         if let button = statusItem.button {
-            let image = NSImage(systemSymbolName: "tray.and.arrow.down.fill", accessibilityDescription: "Yonk")
+            let image = NSImage(systemSymbolName: "tray.and.arrow.down.fill", accessibilityDescription: "Ledge")
             image?.isTemplate = true
             button.image = image
-            button.toolTip = "Yonk — 파일을 끌고 화면 가장자리에 닿으면 선반이 나타납니다"
+            button.toolTip = "Ledge — 파일을 끌고 화면 가장자리에 닿으면 선반이 나타납니다"
         }
         statusItem.menu = menu
 
@@ -60,7 +60,7 @@ final class StatusItemController: NSObject {
         settings.target = self
         menu.addItem(settings)
         menu.addItem(.separator())
-        let quit = NSMenuItem(title: "Yonk 종료", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        let quit = NSMenuItem(title: "Ledge 종료", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         quit.target = NSApp
         menu.addItem(quit)
         menu.delegate = self

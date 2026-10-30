@@ -25,7 +25,7 @@ enum WebImporter {
 
     /// 파일이 아닌 웹 내용: 이미지 데이터 → 이미지 URL 다운로드 → 링크 → HTML → 텍스트 순.
     static func importWebContent(from pb: NSPasteboard, completion: @escaping @MainActor ([URL]) -> Void) {
-        YonkLog.write("web import url=\(SnippetWriter.webURL(from: pb)?.absoluteString.prefix(120) ?? "-") html=\(pb.string(forType: .html)?.prefix(160) ?? "-")")
+        LedgeLog.write("web import url=\(SnippetWriter.webURL(from: pb)?.absoluteString.prefix(120) ?? "-") html=\(pb.string(forType: .html)?.prefix(160) ?? "-")")
         if let url = SnippetWriter.writeImage(from: pb) {
             completion([url])
             return
@@ -51,14 +51,14 @@ enum WebImporter {
                   let url = SnippetWriter.writeText(text) {
             completion([url])
         } else {
-            YonkLog.write("web import: nothing usable, types=\(pb.types?.map(\.rawValue) ?? [])")
+            LedgeLog.write("web import: nothing usable, types=\(pb.types?.map(\.rawValue) ?? [])")
             completion([])
         }
     }
 
     /// 드래그 페이스트보드는 드롭이 끝나면 비워지므로, 비동기 처리용으로 프로미스 타입을 뺀 복사본을 만든다.
     static func snapshot(of pb: NSPasteboard) -> NSPasteboard {
-        let copy = NSPasteboard(name: NSPasteboard.Name("com.jasonhwangfilm.yonk.snapshot-\(UUID().uuidString)"))
+        let copy = NSPasteboard(name: NSPasteboard.Name("com.jasonhwangfilm.ledge.snapshot-\(UUID().uuidString)"))
         copy.clearContents()
         copy.writeObjects(pb.pasteboardItems?.compactMap { copyItem($0) } ?? [])
         return copy
@@ -89,7 +89,7 @@ enum WebImporter {
             try? FileManager.default.removeItem(at: incoming)
             return false
         }
-        YonkLog.write("legacy promise names=\(names)")
+        LedgeLog.write("legacy promise names=\(names)")
         let expected = names.map { incoming.appendingPathComponent($0) }
         waitForFiles(expected, previousSizes: [:], attempts: 0) { ready in
             var moved: [URL] = []
@@ -98,7 +98,7 @@ enum WebImporter {
                 if (try? FileManager.default.moveItem(at: url, to: dest)) != nil { moved.append(dest) }
             }
             try? FileManager.default.removeItem(at: incoming)
-            YonkLog.write("legacy promise received=\(moved.map(\.lastPathComponent))")
+            LedgeLog.write("legacy promise received=\(moved.map(\.lastPathComponent))")
             completion(moved)
         }
         return true
@@ -165,7 +165,7 @@ enum WebImporter {
             let status = (response as? HTTPURLResponse)?.statusCode ?? 0
             Task { @MainActor in
                 guard let data, !data.isEmpty, error == nil, status < 400, let mime, mime.hasPrefix("image/") else {
-                    YonkLog.write("image download failed \(url) status=\(status) mime=\(mime ?? "-") err=\(error.map { "\($0)" } ?? "-")")
+                    LedgeLog.write("image download failed \(url) status=\(status) mime=\(mime ?? "-") err=\(error.map { "\($0)" } ?? "-")")
                     completion(nil)
                     return
                 }

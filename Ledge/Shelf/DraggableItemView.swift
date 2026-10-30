@@ -237,7 +237,7 @@ final class DraggableItemView: NSView, NSDraggingSource {
         let now = convert(event.locationInWindow, from: nil)
         guard hypot(now.x - start.x, now.y - start.y) >= 4 else { return }
         mouseDownPoint = nil
-        YonkLog.write("item drag begin \(item.name)")
+        LedgeLog.write("item drag begin \(item.name)")
         beginDrag(with: event)
     }
 
@@ -245,7 +245,7 @@ final class DraggableItemView: NSView, NSDraggingSource {
         guard mouseDownPoint != nil else { return }
         mouseDownPoint = nil
         store?.select(item.id, extend: event.modifierFlags.contains(.command))
-        YonkLog.write("item select \(item.name) selected=\(store?.selectedIDs.count ?? -1) key=\(window?.isKeyWindow ?? false) fr=\(window?.firstResponder.map { String(describing: type(of: $0)) } ?? "nil")")
+        LedgeLog.write("item select \(item.name) selected=\(store?.selectedIDs.count ?? -1) key=\(window?.isKeyWindow ?? false) fr=\(window?.firstResponder.map { String(describing: type(of: $0)) } ?? "nil")")
         if let store { QuickLookController.shared.update(urls: store.selectedItems.flatMap(\.urls)) }
     }
 
@@ -300,11 +300,11 @@ final class DraggableItemView: NSView, NSDraggingSource {
     func ignoreModifierKeys(for session: NSDraggingSession) -> Bool { false }
 
     func draggingSession(_ session: NSDraggingSession, willBeginAt screenPoint: NSPoint) {
-        YonkLog.write("item session began at \(screenPoint)")
+        LedgeLog.write("item session began at \(screenPoint)")
     }
 
     func draggingSession(_ session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
-        YonkLog.write("item session ended at \(screenPoint) op=\(operation.rawValue)")
+        LedgeLog.write("item session ended at \(screenPoint) op=\(operation.rawValue)")
         // 어딘가에 실제로 놓였으면(복사·이동 등) 잠기지 않은 항목은 선반에서 내려간다.
         guard !operation.isEmpty, let store else { return }
         for shelfItem in itemsToDrag { store.exported(shelfItem) }

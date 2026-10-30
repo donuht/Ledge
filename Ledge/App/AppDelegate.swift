@@ -3,7 +3,7 @@ import AppKit
 /// 명시적 진입점. `@main`을 NSApplicationDelegate에 직접 붙이면 nib 없는 메뉴바 앱에서
 /// delegate가 연결되지 않아 창이 하나도 안 뜨는 문제가 있었다(2026-10-30 확인).
 @main
-enum YonkMain {
+enum LedgeMain {
     @MainActor
     static func main() {
         let app = NSApplication.shared
@@ -23,7 +23,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var hotkeyController: HotkeyController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        NSLog("Yonk: didFinishLaunching")
+        NSLog("Ledge: didFinishLaunching")
+        LegacyMigration.runIfNeeded()
         let shelf = ShelfPanelController()
         shelfController = shelf
         statusItemController = StatusItemController(shelf: shelf)

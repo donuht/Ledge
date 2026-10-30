@@ -1,4 +1,4 @@
-name: Yonk
+name: Ledge
 options:
   bundleIdPrefix: com.jasonhwangfilm
   deploymentTarget:
@@ -23,18 +23,18 @@ packages:
     url: https://github.com/sindresorhus/KeyboardShortcuts
     from: "2.0.0"
 targets:
-  Yonk:
+  Ledge:
     type: application
     platform: macOS
     sources:
-      - path: Yonk
+      - path: Ledge
     dependencies:
       - package: KeyboardShortcuts
     info:
-      path: Yonk/Info.plist
+      path: Ledge/Info.plist
       properties:
-        CFBundleDisplayName: Yonk
-        CFBundleName: Yonk
+        CFBundleDisplayName: Ledge
+        CFBundleName: Ledge
         LSUIElement: true
         LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
         LSApplicationCategoryType: public.app-category.productivity
@@ -44,16 +44,16 @@ targets:
         NSAppleEventsUsageDescription: "Finder에서 선택한 파일을 선반에 추가하기 위해 Finder와 통신합니다."
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.jasonhwangfilm.yonk
-        PRODUCT_NAME: Yonk
+        PRODUCT_BUNDLE_IDENTIFIER: com.jasonhwangfilm.ledge
+        PRODUCT_NAME: Ledge
         GENERATE_INFOPLIST_FILE: NO
         SWIFT_EMIT_LOC_STRINGS: YES
         COMBINE_HIDPI_IMAGES: YES
 schemes:
-  Yonk:
+  Ledge:
     build:
       targets:
-        Yonk: all
+        Ledge: all
     run:
       config: Debug
     archive:

@@ -24,7 +24,7 @@ final class DropTargetView: NSView {
     }
 
     override func keyDown(with event: NSEvent) {
-        YonkLog.write("dropView keyDown code=\(event.keyCode)")
+        LedgeLog.write("dropView keyDown code=\(event.keyCode)")
         guard let store else { return super.keyDown(with: event) }
         let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
         switch event.keyCode {
@@ -55,7 +55,7 @@ final class DropTargetView: NSView {
     private let fileURLOptions: [NSPasteboard.ReadingOptionKey: Any] = [.urlReadingFileURLsOnly: true]
     private let promiseQueue: OperationQueue = {
         let q = OperationQueue()
-        q.name = "com.jasonhwangfilm.yonk.file-promise"
+        q.name = "com.jasonhwangfilm.ledge.file-promise"
         q.qualityOfService = .userInitiated
         return q
     }()
@@ -74,7 +74,7 @@ final class DropTargetView: NSView {
 
     override func draggingEntered(_ sender: any NSDraggingInfo) -> NSDragOperation {
         let op = operation(for: sender)
-        YonkLog.write("drop entered types=\(sender.draggingPasteboard.types?.map(\.rawValue).joined(separator: ",") ?? "-") op=\(op.rawValue)")
+        LedgeLog.write("drop entered types=\(sender.draggingPasteboard.types?.map(\.rawValue).joined(separator: ",") ?? "-") op=\(op.rawValue)")
         if !op.isEmpty { onTargetChanged?(true) }
         return op
     }
@@ -96,7 +96,7 @@ final class DropTargetView: NSView {
     }
 
     override func performDragOperation(_ sender: any NSDraggingInfo) -> Bool {
-        YonkLog.write("drop perform")
+        LedgeLog.write("drop perform")
         onTargetChanged?(false)
         guard !isFromOwnWindow(sender) else { return false }
         let pb = sender.draggingPasteboard
@@ -109,7 +109,7 @@ final class DropTargetView: NSView {
 
         // 2. 이미지 데이터가 바로 실려 있으면(Chrome은 jpeg/tiff를 같이 보낸다) 프로미스를 기다리지 않고 저장한다.
         if SnippetWriter.hasImageData(pb), let url = SnippetWriter.writeImage(from: pb) {
-            YonkLog.write("drop: image data → \(url.lastPathComponent)")
+            LedgeLog.write("drop: image data → \(url.lastPathComponent)")
             onDrop?([url])
             return true
         }
@@ -142,14 +142,14 @@ final class DropTargetView: NSView {
         // 프로미스가 전부 실패하면(일부 사이트) 이미지 데이터로 대신 저장하기 위해 미리 복사해 둔다.
         let fallback = WebImporter.snapshot(of: pb)
 
-        YonkLog.write("promise: waiting for \(receivers.count)")
+        LedgeLog.write("promise: waiting for \(receivers.count)")
         var pending = receivers.count
         var received: [URL] = []
         var finished = false
         let finish: @MainActor () -> Void = { [weak self] in
             guard let self, !finished else { return }
             finished = true
-            YonkLog.write("promise: done received=\(received.map(\.lastPathComponent))")
+            LedgeLog.write("promise: done received=\(received.map(\.lastPathComponent))")
             if !received.isEmpty {
                 self.onDrop?(received)
             } else {
@@ -160,7 +160,7 @@ final class DropTargetView: NSView {
             receiver.receivePromisedFiles(atDestination: destination, options: [:], operationQueue: promiseQueue) { url, error in
                 Task { @MainActor in
                     if let error {
-                        YonkLog.write("promise: failed \(error)")
+                        LedgeLog.write("promise: failed \(error)")
                     } else {
                         received.append(url)
                     }
@@ -171,7 +171,7 @@ final class DropTargetView: NSView {
         }
         // 일부 앱은 프로미스를 끝내 이행하지 않는다. 10초 지나면 페이스트보드 내용으로 대신 처리한다.
         DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
-            if !finished { YonkLog.write("promise: timeout") }
+            if !finished { LedgeLog.write("promise: timeout") }
             finish()
         }
     }

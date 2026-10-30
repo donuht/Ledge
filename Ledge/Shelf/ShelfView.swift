@@ -34,7 +34,7 @@ struct ShelfView: View {
         HStack(spacing: 6) {
             Image(systemName: "tray.and.arrow.down.fill")
                 .foregroundStyle(.secondary)
-            Text(store.isEmpty ? "Yonk" : "\(store.items.count)")
+            Text(store.isEmpty ? "Ledge" : "\(store.items.count)")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .monospacedDigit()

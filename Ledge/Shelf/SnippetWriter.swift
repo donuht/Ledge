@@ -2,12 +2,12 @@ import AppKit
 import UniformTypeIdentifiers
 
 /// 파일이 아닌 드롭(브라우저 이미지·파일 프로미스·URL·텍스트)을
-/// `~/Library/Application Support/Yonk/Snippets/` 안의 실제 파일로 만든다.
+/// `~/Library/Application Support/Ledge/Snippets/` 안의 실제 파일로 만든다.
 /// 그래야 선반에서 다시 드래그해 어디로든 내보낼 수 있다.
 enum SnippetWriter {
     static var directory: URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let dir = base.appendingPathComponent("Yonk/Snippets", isDirectory: true)
+        let dir = base.appendingPathComponent("Ledge/Snippets", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir
     }
@@ -112,7 +112,7 @@ enum SnippetWriter {
             try data.write(to: url, options: .atomic)
             return url
         } catch {
-            NSLog("Yonk: 스니펫 저장 실패 \(url.path): \(error)")
+            NSLog("Ledge: 스니펫 저장 실패 \(url.path): \(error)")
             return nil
         }
     }

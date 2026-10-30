@@ -45,7 +45,7 @@ final class ShelfPanel: NSPanel {
         switch event.type {
         case .leftMouseDown, .rightMouseDown:
             let hit = contentView?.hitTest(event.locationInWindow)
-            YonkLog.write("panel mouseDown at \(event.locationInWindow) hit=\(hit.map { String(describing: type(of: $0)) } ?? "nil")")
+            LedgeLog.write("panel mouseDown at \(event.locationInWindow) hit=\(hit.map { String(describing: type(of: $0)) } ?? "nil")")
             // 어디를 클릭하든 키 윈도우가 되고, 키 입력은 DropTargetView가 받는다.
             makeKey()
             if let dropView = contentView as? DropTargetView {
@@ -55,7 +55,7 @@ final class ShelfPanel: NSPanel {
                 if event.type == .leftMouseDown, !onItem { dropView.backgroundClicked() }
             }
         case .keyDown:
-            YonkLog.write("panel keyDown code=\(event.keyCode) key=\(isKeyWindow) fr=\(firstResponder.map { String(describing: type(of: $0)) } ?? "nil")")
+            LedgeLog.write("panel keyDown code=\(event.keyCode) key=\(isKeyWindow) fr=\(firstResponder.map { String(describing: type(of: $0)) } ?? "nil")")
         default:
             break
         }

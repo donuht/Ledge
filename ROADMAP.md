@@ -1,4 +1,4 @@
-# Yonk (Yoink 대체) — 기능 목록 & 제작 로드맵
+# Ledge (Yoink 대체) — 기능 목록 & 제작 로드맵
 
 작성 2026-10-30. 기준: Yoink 3.6.82 설치본의 UI 문자열·리소스에서 추출한 기능 전수 + 공식 3.6.109 변경 이력.
 원칙: **기능과 동작은 참고하되, 아이콘·문구·코드는 베끼지 않는다.** 리버스 엔지니어링 불필요 — 전부 공개 API로 구현 가능.
@@ -98,7 +98,7 @@ P0 = 이게 없으면 Yoink를 못 버린다 / P1 = 매일 쓰는 편의 / P2 = 
 | 언어·UI | Swift 6, SwiftUI + AppKit 혼합 | 패널·드래그·전역 이벤트는 AppKit 필수, 설정·목록은 SwiftUI |
 | 최소 OS | macOS 14 Sonoma | `SMAppService`, 최신 SwiftUI, Apple Silicon 네이티브 |
 | 샌드박스 | **끔** (Developer ID 직접 배포) | 전역 드래그 감시·임의 경로 접근이 샌드박스에서 까다롭다. 앱스토어 배포는 목표가 아님 |
-| 저장 | 파일은 경로 참조(보안 북마크), 스니펫은 `~/Library/Application Support/Yonk/` | |
+| 저장 | 파일은 경로 참조(보안 북마크), 스니펫은 `~/Library/Application Support/Ledge/` | |
 | 설정 | `UserDefaults` + `@AppStorage` | |
 | 외부 패키지 | `KeyboardShortcuts` 1개만 | 나머지는 시스템 프레임워크 |
 | 업데이트 | Sparkle 2 (Phase 6) | |
@@ -139,7 +139,7 @@ P0 = 이게 없으면 Yoink를 못 버린다 / P1 = 매일 쓰는 편의 / P2 = 
 
 ## 5. 지금 정해야 할 것
 
-1. ~~앱 이름~~ → **Yonk** 확정 (2026-10-30). 번들 ID는 `com.<감독 도메인>.yonk`.
+1. ~~앱 이름~~ → **Ledge** 확정 (2026-10-31, 처음 Yonk → 개명). 번들 ID `com.jasonhwangfilm.ledge`. 폴더는 `App_self/Yonk` 유지.
 2. **저장소 위치** — `/Users/hman/Documents/App_self/Yonk` (이 문서 위치)로 확정, 새 세션은 이 폴더에서 연다.
 3. **P3의 범위** — 스니펫 전부(B2~B7) 넣을지, 파일만으로 먼저 쓸지.
 4. **클립보드 히스토리(P4) 포함 여부** — 다른 앱(Maccy 등) 쓰고 있으면 뺀다.
