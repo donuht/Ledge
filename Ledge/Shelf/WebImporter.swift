@@ -171,7 +171,7 @@ enum WebImporter {
                 }
                 let ext = extensionFor(mime: mime, url: url)
                 let stem = url.deletingPathExtension().lastPathComponent
-                let name = (stem.isEmpty || stem == "/") ? "이미지 \(SnippetWriter.timestamp())" : SnippetWriter.sanitize(stem)
+                let name = (stem.isEmpty || stem == "/") ? SnippetWriter.generatedName("이미지") : SnippetWriter.sanitize(stem)
                 completion(SnippetWriter.write(data: data, name: name, ext: ext))
             }
         }
@@ -191,7 +191,7 @@ enum WebImporter {
             data = payload.removingPercentEncoding.flatMap { Data($0.utf8) }
         }
         guard let data, !data.isEmpty else { return nil }
-        return SnippetWriter.write(data: data, name: "이미지 \(SnippetWriter.timestamp())", ext: extensionFor(mime: mime, url: nil))
+        return SnippetWriter.write(data: data, name: SnippetWriter.generatedName("이미지"), ext: extensionFor(mime: mime, url: nil))
     }
 
     private static func extensionFor(mime: String, url: URL?) -> String {

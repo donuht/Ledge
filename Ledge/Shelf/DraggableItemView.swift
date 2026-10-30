@@ -70,16 +70,16 @@ final class DraggableItemView: NSView, NSDraggingSource {
 
         closeButton.bezelStyle = .accessoryBarAction
         closeButton.isBordered = false
-        closeButton.image = NSImage(systemSymbolName: "xmark.circle.fill", accessibilityDescription: "제거")
+        closeButton.image = NSImage(systemSymbolName: "xmark.circle.fill", accessibilityDescription: String(localized: "제거"))
         closeButton.imagePosition = .imageOnly
         closeButton.contentTintColor = .secondaryLabelColor
-        closeButton.toolTip = "선반에서 제거"
+        closeButton.toolTip = String(localized: "선반에서 제거")
         closeButton.target = self
         closeButton.action = #selector(removeTapped)
         closeButton.isHidden = true
         closeButton.translatesAutoresizingMaskIntoConstraints = false
 
-        lockBadge.image = NSImage(systemSymbolName: "lock.fill", accessibilityDescription: "잠김")?
+        lockBadge.image = NSImage(systemSymbolName: "lock.fill", accessibilityDescription: String(localized: "잠김"))?
             .withSymbolConfiguration(.init(pointSize: 9, weight: .bold))
         lockBadge.contentTintColor = .labelColor
         lockBadge.wantsLayer = true
@@ -187,7 +187,7 @@ final class DraggableItemView: NSView, NSDraggingSource {
         let exists = current.exists
         alphaValue = exists ? 1 : 0.45
         let pathList = current.paths.joined(separator: "\n")
-        toolTip = exists ? pathList : "원본을 찾을 수 없음\n\(pathList)"
+        toolTip = exists ? pathList : String(localized: "원본을 찾을 수 없음") + "\n" + pathList
     }
 
     private func updateBackground() {
@@ -324,37 +324,37 @@ final class DraggableItemView: NSView, NSDraggingSource {
         let menu = NSMenu()
         let targets = targetItems
         let urls = targetURLs
-        let plural = urls.count > 1 ? " (\(urls.count)개)" : ""
+        let plural = urls.count > 1 ? String(localized: " (\(urls.count)개)") : ""
 
-        menu.addItem(withTitle: "열기\(plural)", action: #selector(open), keyEquivalent: "").target = self
-        let openWith = NSMenuItem(title: "다음으로 열기", action: nil, keyEquivalent: "")
+        menu.addItem(withTitle: String(localized: "열기") + plural, action: #selector(open), keyEquivalent: "").target = self
+        let openWith = NSMenuItem(title: String(localized: "다음으로 열기"), action: nil, keyEquivalent: "")
         openWith.submenu = openWithMenu(for: urls)
         menu.addItem(openWith)
-        menu.addItem(withTitle: "미리보기", action: #selector(showQuickLook), keyEquivalent: " ").target = self
+        menu.addItem(withTitle: String(localized: "미리보기"), action: #selector(showQuickLook), keyEquivalent: " ").target = self
         menu.addItem(.separator())
-        menu.addItem(withTitle: "Finder에서 보기", action: #selector(revealInFinder), keyEquivalent: "").target = self
-        menu.addItem(withTitle: "경로 복사\(plural)", action: #selector(copyPaths), keyEquivalent: "").target = self
-        menu.addItem(withTitle: "공유…", action: #selector(share), keyEquivalent: "").target = self
+        menu.addItem(withTitle: String(localized: "Finder에서 보기"), action: #selector(revealInFinder), keyEquivalent: "").target = self
+        menu.addItem(withTitle: String(localized: "경로 복사") + plural, action: #selector(copyPaths), keyEquivalent: "").target = self
+        menu.addItem(withTitle: String(localized: "공유…"), action: #selector(share), keyEquivalent: "").target = self
         menu.addItem(.separator())
         if !item.isStack, targets.count == 1 {
-            menu.addItem(withTitle: "다른 위치에 복사…", action: #selector(copyToLocation), keyEquivalent: "").target = self
-            menu.addItem(withTitle: "다른 위치로 이동…", action: #selector(moveToLocation), keyEquivalent: "").target = self
-            menu.addItem(withTitle: "이름 변경…", action: #selector(rename), keyEquivalent: "").target = self
+            menu.addItem(withTitle: String(localized: "다른 위치에 복사…"), action: #selector(copyToLocation), keyEquivalent: "").target = self
+            menu.addItem(withTitle: String(localized: "다른 위치로 이동…"), action: #selector(moveToLocation), keyEquivalent: "").target = self
+            menu.addItem(withTitle: String(localized: "이름 변경…"), action: #selector(rename), keyEquivalent: "").target = self
             menu.addItem(.separator())
         }
 
         let allLocked = targets.allSatisfy(\.isLocked)
-        menu.addItem(withTitle: allLocked ? "잠금 해제" : "잠금", action: #selector(toggleLock), keyEquivalent: "").target = self
+        menu.addItem(withTitle: allLocked ? String(localized: "잠금 해제") : String(localized: "잠금"), action: #selector(toggleLock), keyEquivalent: "").target = self
         if targets.count >= 2 {
-            menu.addItem(withTitle: "선택 항목 합치기 (\(targets.count)개)", action: #selector(mergeSelected), keyEquivalent: "").target = self
+            menu.addItem(withTitle: String(localized: "선택 항목 합치기 (\(targets.count)개)"), action: #selector(mergeSelected), keyEquivalent: "").target = self
         } else if item.isStack {
-            menu.addItem(withTitle: "스택 풀기 (\(item.count)개)", action: #selector(splitStack), keyEquivalent: "").target = self
+            menu.addItem(withTitle: String(localized: "스택 풀기 (\(item.count)개)"), action: #selector(splitStack), keyEquivalent: "").target = self
         }
         if let store, store.items.count >= 2 {
-            menu.addItem(withTitle: "전체 합치기", action: #selector(mergeAll), keyEquivalent: "").target = self
+            menu.addItem(withTitle: String(localized: "전체 합치기"), action: #selector(mergeAll), keyEquivalent: "").target = self
         }
         menu.addItem(.separator())
-        menu.addItem(withTitle: "선반에서 제거\(targets.count > 1 ? " (\(targets.count)개)" : "")", action: #selector(removeTargets), keyEquivalent: "").target = self
+        menu.addItem(withTitle: String(localized: "선반에서 제거") + (targets.count > 1 ? String(localized: " (\(targets.count)개)") : ""), action: #selector(removeTargets), keyEquivalent: "").target = self
         return menu
     }
 
@@ -370,7 +370,7 @@ final class DraggableItemView: NSView, NSDraggingSource {
             }
         }
         if apps.isEmpty {
-            let none = NSMenuItem(title: "열 수 있는 앱 없음", action: nil, keyEquivalent: "")
+            let none = NSMenuItem(title: String(localized: "열 수 있는 앱 없음"), action: nil, keyEquivalent: "")
             none.isEnabled = false
             menu.addItem(none)
             return menu
@@ -436,7 +436,7 @@ final class DraggableItemView: NSView, NSDraggingSource {
 
     @objc private func copyToLocation() {
         let source = item.url
-        runSavePanel(title: "다른 위치에 복사", prompt: "복사") { destination in
+        runSavePanel(title: String(localized: "다른 위치에 복사"), prompt: String(localized: "복사")) { destination in
             do {
                 if FileManager.default.fileExists(atPath: destination.path) { try FileManager.default.removeItem(at: destination) }
                 try FileManager.default.copyItem(at: source, to: destination)
@@ -449,7 +449,7 @@ final class DraggableItemView: NSView, NSDraggingSource {
     @objc private func moveToLocation() {
         let source = item.url
         let id = item.id
-        runSavePanel(title: "다른 위치로 이동", prompt: "이동") { [weak self] destination in
+        runSavePanel(title: String(localized: "다른 위치로 이동"), prompt: String(localized: "이동")) { [weak self] destination in
             do {
                 if FileManager.default.fileExists(atPath: destination.path) { try FileManager.default.removeItem(at: destination) }
                 try FileManager.default.moveItem(at: source, to: destination)
@@ -464,10 +464,10 @@ final class DraggableItemView: NSView, NSDraggingSource {
         let source = item.url
         let id = item.id
         let alert = NSAlert()
-        alert.messageText = "이름 변경"
+        alert.messageText = String(localized: "이름 변경")
         alert.informativeText = source.lastPathComponent
-        alert.addButton(withTitle: "변경")
-        alert.addButton(withTitle: "취소")
+        alert.addButton(withTitle: String(localized: "변경"))
+        alert.addButton(withTitle: String(localized: "취소"))
         let field = NSTextField(string: source.lastPathComponent)
         field.frame = NSRect(x: 0, y: 0, width: 280, height: 24)
         alert.accessoryView = field

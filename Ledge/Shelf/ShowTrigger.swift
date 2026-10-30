@@ -9,8 +9,8 @@ enum ShowTrigger: String, CaseIterable, Sendable {
 
     var title: String {
         switch self {
-        case .dragStart: "드래그 시작하면 바로"
-        case .edge: "가장자리에 닿으면"
+        case .dragStart: String(localized: "드래그 시작하면 바로")
+        case .edge: String(localized: "가장자리에 닿으면")
         }
     }
 

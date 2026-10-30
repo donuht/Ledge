@@ -21,13 +21,23 @@ struct ShelfView: View {
         }
         .frame(minWidth: 120, minHeight: 100)
         .background(.regularMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .clipShape(shape)
         .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(isDropTargeted ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.quaternary),
-                              lineWidth: isDropTargeted ? 2 : 1)
+            shape.strokeBorder(isDropTargeted ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.quaternary),
+                               lineWidth: isDropTargeted ? 2 : 1)
         )
         .animation(.easeOut(duration: 0.12), value: isDropTargeted)
+    }
+
+    /// 벽(화면 가장자리)에 붙는 쪽 모서리는 직각, 나머지는 둥글게 — 진짜 벽에 붙은 선반처럼.
+    private var shape: UnevenRoundedRectangle {
+        let r: CGFloat = 12
+        return switch edge {
+        case .left: UnevenRoundedRectangle(topLeadingRadius: 0, bottomLeadingRadius: 0, bottomTrailingRadius: r, topTrailingRadius: r, style: .continuous)
+        case .right: UnevenRoundedRectangle(topLeadingRadius: r, bottomLeadingRadius: r, bottomTrailingRadius: 0, topTrailingRadius: 0, style: .continuous)
+        case .top: UnevenRoundedRectangle(topLeadingRadius: 0, bottomLeadingRadius: r, bottomTrailingRadius: r, topTrailingRadius: 0, style: .continuous)
+        case .bottom: UnevenRoundedRectangle(topLeadingRadius: r, bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: r, style: .continuous)
+        }
     }
 
     private var header: some View {
@@ -100,7 +110,7 @@ struct ShelfView: View {
             Image(systemName: "arrow.down.to.line")
                 .font(edge.isVertical ? .title2 : .body)
                 .foregroundStyle(.tertiary)
-            Text(edge.isVertical ? "파일을 여기에\n떨어뜨리세요" : "파일을 여기에 떨어뜨리세요")
+            Text(edge.isVertical ? String(localized: "파일을 여기에\n떨어뜨리세요") : String(localized: "파일을 여기에 떨어뜨리세요"))
                 .font(.caption)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.tertiary)

@@ -1,6 +1,7 @@
 name: Ledge
 options:
   bundleIdPrefix: com.jasonhwangfilm
+  developmentLanguage: ko
   deploymentTarget:
     macOS: "14.0"
   createIntermediateGroups: true
@@ -44,7 +45,7 @@ targets:
         NSAppleEventsUsageDescription: "Finder에서 선택한 파일을 선반에 추가하기 위해 Finder와 통신합니다."
         NSServices:
           - NSMenuItem:
-              default: "Ledge에 추가"
+              default: "Add to Ledge"
             NSMessage: addToShelf
             NSPortName: Ledge
             NSSendTypes:

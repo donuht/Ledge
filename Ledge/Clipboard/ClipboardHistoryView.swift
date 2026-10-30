@@ -32,7 +32,7 @@ struct ClipboardHistoryView: View {
             if filtered.isEmpty {
                 VStack {
                     Spacer()
-                    Text(store.entries.isEmpty ? "아직 기록이 없습니다.\n복사(⌘C)하면 여기에 쌓입니다." : "검색 결과 없음")
+                    Text(store.entries.isEmpty ? String(localized: "아직 기록이 없습니다.\n복사(⌘C)하면 여기에 쌓입니다.") : String(localized: "검색 결과 없음"))
                         .multilineTextAlignment(.center)
                         .foregroundStyle(.secondary)
                     Spacer()
@@ -109,7 +109,7 @@ struct ClipboardHistoryView: View {
                     .foregroundStyle(entry.isPinned ? Color.accentColor : .secondary)
             }
             .buttonStyle(.borderless)
-            .help(entry.isPinned ? "고정 해제" : "고정 (지우기에서 제외)")
+            .help(entry.isPinned ? String(localized: "고정 해제") : String(localized: "고정 (지우기에서 제외)"))
         }
         .padding(.vertical, 2)
     }
@@ -119,7 +119,7 @@ struct ClipboardHistoryView: View {
         Button("다시 복사") { onCopy(entry) }
         Button("선반으로 보내기") { onSendToShelf(entry) }
         Divider()
-        Button(entry.isPinned ? "고정 해제" : "고정") { store.togglePin(id: entry.id) }
+        Button(entry.isPinned ? String(localized: "고정 해제") : String(localized: "고정")) { store.togglePin(id: entry.id) }
         Button("삭제") { store.remove(id: entry.id) }
     }
 }
@@ -141,7 +141,7 @@ final class ClipboardWindowController {
         if window == nil {
             let hosting = NSHostingController(rootView: make())
             let window = NSWindow(contentViewController: hosting)
-            window.title = "클립보드 기록"
+            window.title = String(localized: "클립보드 기록")
             window.styleMask = [.titled, .closable, .resizable]
             window.isReleasedWhenClosed = false
             window.setContentSize(NSSize(width: 460, height: 520))

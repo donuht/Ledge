@@ -24,7 +24,7 @@ struct ShelfItem: Identifiable, Hashable, Sendable {
     var count: Int { urls.count }
 
     var name: String {
-        isStack ? "\(url.lastPathComponent) 외 \(urls.count - 1)개" : url.lastPathComponent
+        isStack ? String(localized: "\(url.lastPathComponent) 외 \(urls.count - 1)개") : url.lastPathComponent
     }
     var path: String { url.path(percentEncoded: false) }
     var paths: [String] { urls.map { $0.path(percentEncoded: false) } }

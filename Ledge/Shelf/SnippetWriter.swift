@@ -58,7 +58,7 @@ enum SnippetWriter {
             let stem = url.deletingPathExtension().lastPathComponent
             if !stem.isEmpty, stem != "/" { return sanitize(stem) }
         }
-        return "이미지 \(timestamp())"
+        return generatedName("이미지")
     }
 
     // MARK: - URL (.webloc)
@@ -68,7 +68,7 @@ enum SnippetWriter {
         guard let data = try? PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0) else {
             return nil
         }
-        let name = url.host().map(sanitize) ?? "링크 \(timestamp())"
+        let name = url.host().map(sanitize) ?? generatedName("링크")
         return write(data: data, name: name, ext: "webloc")
     }
 
@@ -85,7 +85,7 @@ enum SnippetWriter {
     static func writeHTML(_ html: String, plainText: String?) -> URL? {
         let firstLine = (plainText ?? "").split(whereSeparator: \.isNewline).first.map(String.init) ?? ""
         let stem = String(firstLine.trimmingCharacters(in: .whitespaces).prefix(40))
-        let name = stem.isEmpty ? "웹 \(timestamp())" : sanitize(stem)
+        let name = stem.isEmpty ? generatedName("웹") : sanitize(stem)
         let document: String
         if html.range(of: "<html", options: .caseInsensitive) != nil {
             document = html
@@ -100,7 +100,7 @@ enum SnippetWriter {
     static func writeText(_ text: String) -> URL? {
         let firstLine = text.split(whereSeparator: \.isNewline).first.map(String.init) ?? ""
         let stem = String(firstLine.trimmingCharacters(in: .whitespaces).prefix(40))
-        let name = stem.isEmpty ? "텍스트 \(timestamp())" : sanitize(stem)
+        let name = stem.isEmpty ? generatedName("텍스트") : sanitize(stem)
         return write(data: Data(text.utf8), name: name, ext: "txt")
     }
 
@@ -132,7 +132,12 @@ enum SnippetWriter {
         let bad = CharacterSet(charactersIn: "/:\\?%*|\"<>")
         let cleaned = s.components(separatedBy: bad).joined(separator: "-")
         let trimmed = cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? "항목 \(timestamp())" : String(trimmed.prefix(80))
+        return trimmed.isEmpty ? generatedName("항목") : String(trimmed.prefix(80))
+    }
+
+    /// "이미지 2026-10-31 01.00.00" 같은 자동 이름. 앞말은 로컬라이즈된다.
+    static func generatedName(_ word: String.LocalizationValue) -> String {
+        "\(String(localized: word)) \(timestamp())"
     }
 
     static func timestamp() -> String {

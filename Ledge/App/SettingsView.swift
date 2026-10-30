@@ -28,23 +28,23 @@ struct SettingsView: View {
                 Picker("나타나는 조건", selection: $settings.showTrigger) {
                     ForEach(ShowTrigger.allCases, id: \.self) { Text($0.title).tag($0) }
                 }
-                Text(triggerHelp)
+                Text(verbatim: triggerHelp)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 HStack {
                     Slider(value: $settings.autoHideDelay, in: 0.2...3, step: 0.1) {
                         Text("비면 사라지기까지")
                     }
-                    Text(String(format: "%.1f초", settings.autoHideDelay))
+                    Text(String(format: String(localized: "%.1f초"), settings.autoHideDelay))
                         .monospacedDigit()
                         .frame(width: 44, alignment: .trailing)
                 }
             }
 
             Section("단축키") {
-                KeyboardShortcuts.Recorder("선반 보기/숨기기", name: .toggleShelf)
-                KeyboardShortcuts.Recorder("Finder 선택 파일 추가", name: .addFinderSelection)
-                KeyboardShortcuts.Recorder("클립보드 내용 추가", name: .addClipboard)
+                KeyboardShortcuts.Recorder(String(localized: "선반 보기/숨기기"), name: .toggleShelf)
+                KeyboardShortcuts.Recorder(String(localized: "Finder 선택 파일 추가"), name: .addFinderSelection)
+                KeyboardShortcuts.Recorder(String(localized: "클립보드 내용 추가"), name: .addClipboard)
             }
 
             Section("일반") {
@@ -52,12 +52,23 @@ struct SettingsView: View {
                     get: { _ = settings.launchAtLoginVersion; return settings.launchAtLogin },
                     set: { settings.launchAtLogin = $0 }
                 ))
+                HStack {
+                    Picker("언어", selection: $settings.appLanguage) {
+                        Text("시스템 설정 따름").tag("")
+                        Text("한국어").tag("ko")
+                        Text("English").tag("en")
+                    }
+                    Button("다시 실행") { relaunch() }
+                }
+                Text("언어는 다시 실행하면 적용됩니다.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             Section {
                 Toggle("클립보드 기록 켜기", isOn: $settings.clipboardHistoryEnabled)
                 if settings.clipboardHistoryEnabled {
-                    KeyboardShortcuts.Recorder("기록 창 열기", name: .showClipboardHistory)
+                    KeyboardShortcuts.Recorder(String(localized: "기록 창 열기"), name: .showClipboardHistory)
                     Picker("보관 개수", selection: $settings.clipboardMaxItems) {
                         Text("100개").tag(100)
                         Text("500개").tag(500)
@@ -123,10 +134,18 @@ struct SettingsView: View {
         .onAppear(perform: refreshRunningApps)
     }
 
+    private func relaunch() {
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.createsNewApplicationInstance = true
+        NSWorkspace.shared.openApplication(at: Bundle.main.bundleURL, configuration: configuration) { _, _ in
+            Task { @MainActor in NSApp.terminate(nil) }
+        }
+    }
+
     private var triggerHelp: String {
         switch settings.showTrigger {
-        case .dragStart: "드래그를 시작하면 바로 나타나고, 비어 있으면 사라집니다."
-        case .edge: "파일을 끌고 화면의 \(settings.edge.title) 가장자리에 닿으면 나타나고, 비어 있으면 사라집니다."
+        case .dragStart: String(localized: "드래그를 시작하면 바로 나타나고, 비어 있으면 사라집니다.")
+        case .edge: String(localized: "파일을 끌고 화면의 \(settings.edge.title) 가장자리에 닿으면 나타나고, 비어 있으면 사라집니다.")
         }
     }
 
@@ -194,7 +213,7 @@ final class SettingsWindowController {
         if window == nil {
             let hosting = NSHostingController(rootView: SettingsView(settings: .shared))
             let window = NSWindow(contentViewController: hosting)
-            window.title = "Ledge 설정"
+            window.title = String(localized: "Ledge 설정")
             window.styleMask = [.titled, .closable]
             window.isReleasedWhenClosed = false
             // 그룹 Form은 고유 높이가 없어 창이 제목줄만 남도록 줄어든다. 크기를 명시한다.

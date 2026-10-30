@@ -72,7 +72,7 @@ final class ClipboardController {
             if let url = SnippetWriter.writeText(entry.text ?? "") { urls = [url] }
         case .image:
             if let source = store.imageURL(for: entry), let data = try? Data(contentsOf: source),
-               let url = SnippetWriter.write(data: data, name: "이미지 \(SnippetWriter.timestamp())", ext: "png") {
+               let url = SnippetWriter.write(data: data, name: SnippetWriter.generatedName("이미지"), ext: "png") {
                 urls = [url]
             }
         case .files:

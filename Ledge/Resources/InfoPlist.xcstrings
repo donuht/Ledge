@@ -1,0 +1,22 @@
+{
+  "sourceLanguage": "ko",
+  "version": "1.0",
+  "strings": {
+    "NSAppleEventsUsageDescription": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finder에서 선택한 파일을 선반에 추가하기 위해 Finder와 통신합니다."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ledge talks to Finder to add the files you selected to the shelf."
+          }
+        }
+      }
+    }
+  }
+}

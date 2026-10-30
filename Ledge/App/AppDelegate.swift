@@ -27,6 +27,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSLog("Ledge: didFinishLaunching")
         LegacyMigration.runIfNeeded()
+        LedgeLog.write("language=\(Locale.preferredLanguages.first ?? "-") sample=\(String(localized: "Ledge 종료"))")
         let shelf = ShelfPanelController()
         shelfController = shelf
         statusItemController = StatusItemController(shelf: shelf)

@@ -8,10 +8,10 @@ enum ShelfEdge: String, CaseIterable, Sendable {
 
     var title: String {
         switch self {
-        case .left: "왼쪽"
-        case .right: "오른쪽"
-        case .top: "위"
-        case .bottom: "아래"
+        case .left: String(localized: "왼쪽")
+        case .right: String(localized: "오른쪽")
+        case .top: String(localized: "위")
+        case .bottom: String(localized: "아래")
         }
     }
 

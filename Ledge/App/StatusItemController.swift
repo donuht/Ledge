@@ -17,29 +17,29 @@ final class StatusItemController: NSObject {
     init(shelf: ShelfPanelController) {
         self.shelf = shelf
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        toggleItem = NSMenuItem(title: "선반 숨기기", action: #selector(toggleShelf), keyEquivalent: "")
-        clipboardItem = NSMenuItem(title: "클립보드 기록…", action: #selector(showClipboard), keyEquivalent: "")
+        toggleItem = NSMenuItem(title: String(localized: "선반 숨기기"), action: #selector(toggleShelf), keyEquivalent: "")
+        clipboardItem = NSMenuItem(title: String(localized: "클립보드 기록…"), action: #selector(showClipboard), keyEquivalent: "")
         super.init()
 
         if let button = statusItem.button {
             let image = NSImage(systemSymbolName: "tray.and.arrow.down.fill", accessibilityDescription: "Ledge")
             image?.isTemplate = true
             button.image = image
-            button.toolTip = "Ledge — 파일을 끌고 화면 가장자리에 닿으면 선반이 나타납니다"
+            button.toolTip = String(localized: "Ledge — 파일을 끌고 화면 가장자리에 닿으면 선반이 나타납니다")
         }
         statusItem.menu = menu
 
         toggleItem.target = self
         menu.addItem(toggleItem)
-        let paste = NSMenuItem(title: "클립보드 내용 추가", action: #selector(addFromClipboard), keyEquivalent: "")
+        let paste = NSMenuItem(title: String(localized: "클립보드 내용 추가"), action: #selector(addFromClipboard), keyEquivalent: "")
         paste.target = self
         menu.addItem(paste)
         clipboardItem.target = self
         menu.addItem(clipboardItem)
         menu.addItem(.separator())
 
-        let edgeItem = NSMenuItem(title: "선반 위치", action: nil, keyEquivalent: "")
-        let edgeMenu = NSMenu(title: "선반 위치")
+        let edgeItem = NSMenuItem(title: String(localized: "선반 위치"), action: nil, keyEquivalent: "")
+        let edgeMenu = NSMenu(title: String(localized: "선반 위치"))
         for edge in ShelfEdge.allCases {
             let item = NSMenuItem(title: edge.title, action: #selector(selectEdge(_:)), keyEquivalent: "")
             item.target = self
@@ -50,8 +50,8 @@ final class StatusItemController: NSObject {
         menu.addItem(edgeItem)
         self.edgeMenu = edgeMenu
 
-        let sizeItem = NSMenuItem(title: "선반 크기", action: nil, keyEquivalent: "")
-        let sizeMenu = NSMenu(title: "선반 크기")
+        let sizeItem = NSMenuItem(title: String(localized: "선반 크기"), action: nil, keyEquivalent: "")
+        let sizeMenu = NSMenu(title: String(localized: "선반 크기"))
         for size in ShelfSize.allCases where size != .custom {
             let item = NSMenuItem(title: size.title, action: #selector(selectSize(_:)), keyEquivalent: "")
             item.target = self
@@ -62,8 +62,8 @@ final class StatusItemController: NSObject {
         menu.addItem(sizeItem)
         self.sizeMenu = sizeMenu
 
-        let triggerItem = NSMenuItem(title: "나타나는 조건", action: nil, keyEquivalent: "")
-        let triggerMenu = NSMenu(title: "나타나는 조건")
+        let triggerItem = NSMenuItem(title: String(localized: "나타나는 조건"), action: nil, keyEquivalent: "")
+        let triggerMenu = NSMenu(title: String(localized: "나타나는 조건"))
         for trigger in ShowTrigger.allCases {
             let item = NSMenuItem(title: trigger.title, action: #selector(selectTrigger(_:)), keyEquivalent: "")
             item.target = self
@@ -74,11 +74,11 @@ final class StatusItemController: NSObject {
         menu.addItem(triggerItem)
         self.triggerMenu = triggerMenu
         menu.addItem(.separator())
-        let settings = NSMenuItem(title: "설정…", action: #selector(openSettings), keyEquivalent: ",")
+        let settings = NSMenuItem(title: String(localized: "설정…"), action: #selector(openSettings), keyEquivalent: ",")
         settings.target = self
         menu.addItem(settings)
         menu.addItem(.separator())
-        let quit = NSMenuItem(title: "Ledge 종료", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        let quit = NSMenuItem(title: String(localized: "Ledge 종료"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         quit.target = NSApp
         menu.addItem(quit)
         menu.delegate = self
@@ -118,7 +118,7 @@ final class StatusItemController: NSObject {
 
 extension StatusItemController: NSMenuDelegate {
     func menuWillOpen(_ menu: NSMenu) {
-        toggleItem.title = shelf.isVisible ? "선반 숨기기" : "선반 보기"
+        toggleItem.title = shelf.isVisible ? String(localized: "선반 숨기기") : String(localized: "선반 보기")
         clipboardItem.isHidden = !AppSettings.shared.clipboardHistoryEnabled
         for item in edgeMenu?.items ?? [] {
             item.state = (item.representedObject as? String) == AppSettings.shared.edge.rawValue ? .on : .off

@@ -63,6 +63,18 @@ final class AppSettings {
         didSet { UserDefaults.standard.set(clipboardMaxAgeDays, forKey: Keys.clipboardMaxAgeDays) }
     }
 
+    /// 앱 언어 강제("" = 시스템 따름, "ko", "en"). 바꾸면 다시 실행해야 적용된다.
+    var appLanguage: String {
+        didSet {
+            guard appLanguage != oldValue else { return }
+            if appLanguage.isEmpty {
+                UserDefaults.standard.removeObject(forKey: "AppleLanguages")
+            } else {
+                UserDefaults.standard.set([appLanguage], forKey: "AppleLanguages")
+            }
+        }
+    }
+
     /// 드래그 중 선반이 나타나는 조건.
     var showTrigger: ShowTrigger {
         didSet {
@@ -123,6 +135,8 @@ final class AppSettings {
         edge = ShelfEdge.saved
         showTrigger = ShowTrigger.saved
         let d = UserDefaults.standard
+        let overridden = Bundle.main.bundleIdentifier.flatMap { d.persistentDomain(forName: $0)?["AppleLanguages"] as? [String] }
+        appLanguage = overridden?.first ?? ""
         size = d.string(forKey: Keys.size).flatMap(ShelfSize.init(rawValue:)) ?? .medium
         func loadSize(_ key: String, fallback: NSSize) -> NSSize {
             guard let arr = d.array(forKey: key) as? [Double], arr.count == 2 else { return fallback }

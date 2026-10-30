@@ -6,10 +6,10 @@ enum ShelfSize: String, CaseIterable, Sendable {
 
     var title: String {
         switch self {
-        case .small: "작게"
-        case .medium: "보통"
-        case .large: "크게"
-        case .custom: "직접 조절"
+        case .small: String(localized: "작게")
+        case .medium: String(localized: "보통")
+        case .large: String(localized: "크게")
+        case .custom: String(localized: "직접 조절")
         }
     }
 

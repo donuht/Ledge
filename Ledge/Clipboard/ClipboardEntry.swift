@@ -20,12 +20,12 @@ struct ClipboardEntry: Identifiable, Codable, Hashable, Sendable {
         case .text:
             let line = (text ?? "").split(whereSeparator: \.isNewline).map { $0.trimmingCharacters(in: .whitespaces) }
                 .first { !$0.isEmpty } ?? ""
-            return line.isEmpty ? "(빈 텍스트)" : String(line.prefix(120))
+            return line.isEmpty ? String(localized: "(빈 텍스트)") : String(line.prefix(120))
         case .image:
-            return "이미지"
+            return String(localized: "이미지")
         case .files:
             let names = (paths ?? []).map { ($0 as NSString).lastPathComponent }
-            return names.count > 3 ? "\(names.prefix(3).joined(separator: ", ")) 외 \(names.count - 3)개" : names.joined(separator: ", ")
+            return names.count > 3 ? String(localized: "\(names.prefix(3).joined(separator: ", ")) 외 \(names.count - 3)개") : names.joined(separator: ", ")
         }
     }
 
@@ -34,9 +34,9 @@ struct ClipboardEntry: Identifiable, Codable, Hashable, Sendable {
         case .text:
             let count = text?.count ?? 0
             let lines = text?.split(whereSeparator: \.isNewline).count ?? 0
-            return lines > 1 ? "\(count)자 · \(lines)줄" : "\(count)자"
+            return lines > 1 ? String(localized: "\(count)자 · \(lines)줄") : String(localized: "\(count)자")
         case .image: return "PNG"
-        case .files: return "파일 \(paths?.count ?? 0)개"
+        case .files: return String(localized: "파일 \(paths?.count ?? 0)개")
         }
     }
 

@@ -12,7 +12,7 @@ final class ServicesProvider: NSObject {
     @objc func addToShelf(_ pboard: NSPasteboard, userData: String, error: AutoreleasingUnsafeMutablePointer<NSString>) {
         guard let urls = pboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL],
               !urls.isEmpty else {
-            error.pointee = "선택한 파일이 없습니다."
+            error.pointee = String(localized: "선택한 파일이 없습니다.") as NSString
             return
         }
         shelf.store.add(urls: urls)
