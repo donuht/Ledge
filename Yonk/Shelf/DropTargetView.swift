@@ -9,6 +9,48 @@ final class DropTargetView: NSView {
 
     var onDrop: (([URL]) -> Void)?
     var onTargetChanged: ((Bool) -> Void)?
+    /// ⌘V: 클립보드 내용을 선반에 추가.
+    var onPaste: (() -> Void)?
+    weak var store: ShelfStore?
+
+    // MARK: - 키보드 (패널이 키 윈도우일 때)
+
+    override var acceptsFirstResponder: Bool { true }
+
+    /// 빈 곳 클릭 = 선택 해제.
+    override func mouseDown(with event: NSEvent) {
+        window?.makeKey()
+        store?.clearSelection()
+        QuickLookController.shared.close()
+    }
+
+    override func keyDown(with event: NSEvent) {
+        guard let store else { return super.keyDown(with: event) }
+        let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        switch event.keyCode {
+        case 49: // space
+            let selected = store.selectedItems
+            let urls = (selected.isEmpty ? store.items : selected).flatMap(\.urls)
+            QuickLookController.shared.toggle(urls: urls)
+        case 51, 117: // delete, forward delete
+            if !store.selectedItems.isEmpty { store.removeSelected() }
+        case 53: // esc
+            QuickLookController.shared.close()
+            store.clearSelection()
+        case 36, 76: // return
+            for url in store.selectedItems.flatMap(\.urls) { NSWorkspace.shared.open(url) }
+        default:
+            if flags == .command, event.charactersIgnoringModifiers == "a" {
+                store.selectAll()
+            } else if flags == .command, event.charactersIgnoringModifiers == "v" {
+                onPaste?()
+            } else if flags == .command, event.charactersIgnoringModifiers == "z" {
+                store.restoreLastRemoved()
+            } else {
+                super.keyDown(with: event)
+            }
+        }
+    }
 
     private let fileURLOptions: [NSPasteboard.ReadingOptionKey: Any] = [.urlReadingFileURLsOnly: true]
     private let promiseQueue: OperationQueue = {
@@ -81,57 +123,16 @@ final class DropTargetView: NSView {
 
         // 4. 구형 파일 프로미스(Chrome·Electron 이미지).
         if WebImporter.hasLegacyPromise(pb) {
-            let fallback = snapshot(of: pb)
+            let fallback = WebImporter.snapshot(of: pb)
             let started = WebImporter.receiveLegacyPromise(sender) { [weak self] urls in
                 guard let self else { return }
-                if !urls.isEmpty { onDrop?(urls) } else { importWebContent(from: fallback) }
+                if !urls.isEmpty { onDrop?(urls) } else { WebImporter.importWebContent(from: fallback) { [weak self] urls in self?.onDrop?(urls) } }
             }
             if started { return true }
         }
 
-        importWebContent(from: pb)
+        WebImporter.importWebContent(from: pb) { [weak self] urls in self?.onDrop?(urls) }
         return true
-    }
-
-    /// 파일이 아닌 웹 내용: 이미지 데이터 → 이미지 URL 다운로드 → HTML → 링크 → 텍스트 순.
-    private func importWebContent(from pb: NSPasteboard) {
-        YonkLog.write("web import url=\(SnippetWriter.webURL(from: pb)?.absoluteString.prefix(120) ?? "-") html=\(pb.string(forType: .html)?.prefix(160) ?? "-")")
-        if let url = SnippetWriter.writeImage(from: pb) {
-            onDrop?([url])
-            return
-        }
-        if let imageURL = WebImporter.imageURL(from: pb) {
-            let fallback = snapshot(of: pb)
-            WebImporter.downloadImage(imageURL, referer: SnippetWriter.webURL(from: pb)) { [weak self] url in
-                guard let self else { return }
-                if let url { onDrop?([url]) } else { importNonImageWebContent(from: fallback) }
-            }
-            return
-        }
-        importNonImageWebContent(from: pb)
-    }
-
-    private func importNonImageWebContent(from pb: NSPasteboard) {
-        let text = pb.string(forType: .string)
-        if let web = SnippetWriter.webURL(from: pb), let url = SnippetWriter.writeWebLocation(web) {
-            onDrop?([url])
-        } else if let html = pb.string(forType: .html), !html.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                  let url = SnippetWriter.writeHTML(html, plainText: text) {
-            onDrop?([url])
-        } else if let text, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                  let url = SnippetWriter.writeText(text) {
-            onDrop?([url])
-        } else {
-            YonkLog.write("web import: nothing usable, types=\(pb.types?.map(\.rawValue) ?? [])")
-        }
-    }
-
-    /// 드래그 페이스트보드는 드롭이 끝나면 비워지므로, 비동기 처리용으로 프로미스 타입을 뺀 복사본을 만든다.
-    private func snapshot(of pb: NSPasteboard) -> NSPasteboard {
-        let copy = NSPasteboard(name: NSPasteboard.Name("com.jasonhwangfilm.yonk.snapshot-\(UUID().uuidString)"))
-        copy.clearContents()
-        copy.writeObjects(pb.pasteboardItems?.compactMap { copyItem($0) } ?? [])
-        return copy
     }
 
     // MARK: - 파일 프로미스
@@ -139,7 +140,7 @@ final class DropTargetView: NSView {
     private func receivePromises(_ receivers: [NSFilePromiseReceiver], fallbackPasteboard pb: NSPasteboard) {
         let destination = SnippetWriter.directory
         // 프로미스가 전부 실패하면(일부 사이트) 이미지 데이터로 대신 저장하기 위해 미리 복사해 둔다.
-        let fallback = snapshot(of: pb)
+        let fallback = WebImporter.snapshot(of: pb)
 
         YonkLog.write("promise: waiting for \(receivers.count)")
         var pending = receivers.count
@@ -152,7 +153,7 @@ final class DropTargetView: NSView {
             if !received.isEmpty {
                 self.onDrop?(received)
             } else {
-                self.importWebContent(from: fallback)
+                WebImporter.importWebContent(from: fallback) { [weak self] urls in self?.onDrop?(urls) }
             }
         }
         for receiver in receivers {
@@ -173,19 +174,6 @@ final class DropTargetView: NSView {
             if !finished { YonkLog.write("promise: timeout") }
             finish()
         }
-    }
-
-    private func copyItem(_ item: NSPasteboardItem) -> NSPasteboardItem? {
-        let promiseTypes = Set(NSFilePromiseReceiver.readableDraggedTypes + [WebImporter.legacyPromiseType.rawValue])
-        let copy = NSPasteboardItem()
-        var any = false
-        for type in item.types where !promiseTypes.contains(type.rawValue) {
-            if let data = item.data(forType: type) {
-                copy.setData(data, forType: type)
-                any = true
-            }
-        }
-        return any ? copy : nil
     }
 
     // MARK: - 판정

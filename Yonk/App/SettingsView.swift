@@ -26,6 +26,7 @@ struct SettingsView: View {
             Section("단축키") {
                 KeyboardShortcuts.Recorder("선반 보기/숨기기", name: .toggleShelf)
                 KeyboardShortcuts.Recorder("Finder 선택 파일 추가", name: .addFinderSelection)
+                KeyboardShortcuts.Recorder("클립보드 내용 추가", name: .addClipboard)
             }
 
             Section("일반") {

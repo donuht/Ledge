@@ -27,6 +27,9 @@ final class StatusItemController: NSObject {
 
         toggleItem.target = self
         menu.addItem(toggleItem)
+        let paste = NSMenuItem(title: "클립보드 내용 추가", action: #selector(addFromClipboard), keyEquivalent: "")
+        paste.target = self
+        menu.addItem(paste)
         menu.addItem(.separator())
 
         let edgeItem = NSMenuItem(title: "선반 위치", action: nil, keyEquivalent: "")
@@ -61,6 +64,10 @@ final class StatusItemController: NSObject {
         quit.target = NSApp
         menu.addItem(quit)
         menu.delegate = self
+    }
+
+    @objc private func addFromClipboard() {
+        shelf.addFromClipboard()
     }
 
     @objc private func toggleShelf() {

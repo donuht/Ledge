@@ -6,6 +6,8 @@ extension KeyboardShortcuts.Name {
     static let toggleShelf = Self("toggleShelf", default: .init(.y, modifiers: [.control, .option]))
     /// Finder에서 선택한 파일을 선반에 추가. 기본 ⌃⌥⇧Y.
     static let addFinderSelection = Self("addFinderSelection", default: .init(.y, modifiers: [.control, .option, .shift]))
+    /// 클립보드 내용을 선반에 추가. 기본 ⌃⌥V.
+    static let addClipboard = Self("addClipboard", default: .init(.v, modifiers: [.control, .option]))
 }
 
 /// 전역 단축키(Carbon 핫키 기반, 접근성 권한 불필요).
@@ -20,6 +22,9 @@ final class HotkeyController {
         }
         KeyboardShortcuts.onKeyUp(for: .addFinderSelection) { [weak self] in
             self?.addFinderSelection()
+        }
+        KeyboardShortcuts.onKeyUp(for: .addClipboard) { [weak self] in
+            self?.shelf.addFromClipboard()
         }
     }
 

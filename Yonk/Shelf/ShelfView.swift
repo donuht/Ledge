@@ -51,8 +51,8 @@ struct ShelfView: View {
             } label: {
                 Image(systemName: "trash")
             }
-            .help("전체 비우기")
-            .disabled(store.isEmpty)
+            .help("전체 비우기 (잠긴 항목 제외)")
+            .disabled(!store.hasUnlocked)
         }
         .buttonStyle(.borderless)
         .imageScale(.small)
@@ -67,8 +67,8 @@ struct ShelfView: View {
                     DraggableItemRow(
                         item: item,
                         style: .row,
-                        onRemove: { store.remove($0) },
-                        onExported: { store.remove($0) }
+                        store: store,
+                        isSelected: store.selectedIDs.contains(item.id)
                     )
                     .frame(height: DraggableItemView.rowHeight)
                 }
@@ -84,8 +84,8 @@ struct ShelfView: View {
                     DraggableItemRow(
                         item: item,
                         style: .card,
-                        onRemove: { store.remove($0) },
-                        onExported: { store.remove($0) }
+                        store: store,
+                        isSelected: store.selectedIDs.contains(item.id)
                     )
                     .frame(width: DraggableItemView.cardSize.width, height: DraggableItemView.cardSize.height)
                 }

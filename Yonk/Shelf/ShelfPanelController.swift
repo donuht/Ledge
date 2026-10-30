@@ -57,6 +57,10 @@ final class ShelfPanelController {
         dropView.onTargetChanged = { [weak self] targeted in
             self?.isDropTargeted = targeted
         }
+        dropView.store = store
+        dropView.onPaste = { [weak self] in
+            self?.addFromClipboard()
+        }
 
         // 평소엔 숨어 있다가, 다른 앱에서 드래그하는 동안 나타나고(설정에 따라 시작 즉시 또는
         // 가장자리에 닿았을 때), 끝난 뒤 비어 있으면 사라진다.
@@ -103,6 +107,19 @@ final class ShelfPanelController {
         hostingView.rootView = ShelfView(store: store, edge: edge, isDropTargeted: isDropTargeted)
     }
 
+    /// 클립보드 내용(파일·이미지·링크·글)을 선반에 추가한다(B7).
+    func addFromClipboard() {
+        WebImporter.importContent(from: .general) { [weak self] urls in
+            guard let self else { return }
+            guard !urls.isEmpty else {
+                NSSound.beep()
+                return
+            }
+            store.add(urls: urls)
+            if !isVisible { show() }
+        }
+    }
+
     /// 실행 직후: 내용이 있으면 보여 주고, 비어 있으면 숨긴 채 드래그를 기다린다.
     func showAtLaunchIfNeeded() {
         if !store.isEmpty { show() }
@@ -118,6 +135,7 @@ final class ShelfPanelController {
     func hide() {
         YonkLog.write("shelf hide")
         hideWorkItem?.cancel()
+        QuickLookController.shared.close()
         panel.orderOut(nil)
     }
 

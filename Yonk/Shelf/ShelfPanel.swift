@@ -1,4 +1,5 @@
 import AppKit
+import Quartz
 
 /// 앱을 활성화하지 않고 모든 스페이스·전체화면 앱 위에 떠 있는 선반 창.
 final class ShelfPanel: NSPanel {
@@ -14,6 +15,7 @@ final class ShelfPanel: NSPanel {
         isFloatingPanel = true
         hidesOnDeactivate = false
         becomesKeyOnlyIfNeeded = true
+        acceptsMouseMovedEvents = true
         isMovableByWindowBackground = false
         isOpaque = false
         backgroundColor = .clear

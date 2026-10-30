@@ -12,6 +12,71 @@ enum WebImporter {
         pb.types?.contains(legacyPromiseType) ?? false
     }
 
+    // MARK: - 페이스트보드 → 파일 (드롭·클립보드 공용)
+
+    /// 파일 URL이면 그대로, 아니면 웹 내용으로 처리한다.
+    static func importContent(from pb: NSPasteboard, completion: @escaping @MainActor ([URL]) -> Void) {
+        if let urls = pb.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL], !urls.isEmpty {
+            completion(urls)
+            return
+        }
+        importWebContent(from: pb, completion: completion)
+    }
+
+    /// 파일이 아닌 웹 내용: 이미지 데이터 → 이미지 URL 다운로드 → 링크 → HTML → 텍스트 순.
+    static func importWebContent(from pb: NSPasteboard, completion: @escaping @MainActor ([URL]) -> Void) {
+        YonkLog.write("web import url=\(SnippetWriter.webURL(from: pb)?.absoluteString.prefix(120) ?? "-") html=\(pb.string(forType: .html)?.prefix(160) ?? "-")")
+        if let url = SnippetWriter.writeImage(from: pb) {
+            completion([url])
+            return
+        }
+        if let imageURL = imageURL(from: pb) {
+            let fallback = snapshot(of: pb)
+            downloadImage(imageURL, referer: SnippetWriter.webURL(from: pb)) { url in
+                if let url { completion([url]) } else { importNonImageWebContent(from: fallback, completion: completion) }
+            }
+            return
+        }
+        importNonImageWebContent(from: pb, completion: completion)
+    }
+
+    private static func importNonImageWebContent(from pb: NSPasteboard, completion: @MainActor ([URL]) -> Void) {
+        let text = pb.string(forType: .string)
+        if let web = SnippetWriter.webURL(from: pb), let url = SnippetWriter.writeWebLocation(web) {
+            completion([url])
+        } else if let html = pb.string(forType: .html), !html.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                  let url = SnippetWriter.writeHTML(html, plainText: text) {
+            completion([url])
+        } else if let text, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                  let url = SnippetWriter.writeText(text) {
+            completion([url])
+        } else {
+            YonkLog.write("web import: nothing usable, types=\(pb.types?.map(\.rawValue) ?? [])")
+            completion([])
+        }
+    }
+
+    /// 드래그 페이스트보드는 드롭이 끝나면 비워지므로, 비동기 처리용으로 프로미스 타입을 뺀 복사본을 만든다.
+    static func snapshot(of pb: NSPasteboard) -> NSPasteboard {
+        let copy = NSPasteboard(name: NSPasteboard.Name("com.jasonhwangfilm.yonk.snapshot-\(UUID().uuidString)"))
+        copy.clearContents()
+        copy.writeObjects(pb.pasteboardItems?.compactMap { copyItem($0) } ?? [])
+        return copy
+    }
+
+    private static func copyItem(_ item: NSPasteboardItem) -> NSPasteboardItem? {
+        let promiseTypes = Set(NSFilePromiseReceiver.readableDraggedTypes + [legacyPromiseType.rawValue])
+        let copy = NSPasteboardItem()
+        var any = false
+        for type in item.types where !promiseTypes.contains(type.rawValue) {
+            if let data = item.data(forType: type) {
+                copy.setData(data, forType: type)
+                any = true
+            }
+        }
+        return any ? copy : nil
+    }
+
     // MARK: - 구형 파일 프로미스
 
     /// 보내는 쪽이 임시 폴더에 파일을 써 주면, 다 써질 때까지 기다렸다가 Snippets로 옮긴다.
