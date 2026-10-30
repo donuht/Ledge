@@ -60,7 +60,7 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 440)
+        .frame(width: 440, height: 520)
         .onAppear(perform: refreshRunningApps)
     }
 
@@ -118,6 +118,8 @@ final class SettingsWindowController {
             window.title = "Yonk 설정"
             window.styleMask = [.titled, .closable]
             window.isReleasedWhenClosed = false
+            // 그룹 Form은 고유 높이가 없어 창이 제목줄만 남도록 줄어든다. 크기를 명시한다.
+            window.setContentSize(NSSize(width: 440, height: 520))
             window.center()
             self.window = window
         }
