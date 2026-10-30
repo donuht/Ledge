@@ -24,8 +24,22 @@ final class ShelfPanel: NSPanel {
         isReleasedWhenClosed = false
     }
 
-    // 드래그 중에도 마우스 이벤트를 받아야 하므로 키 윈도우가 되지 않는다.
-    override var canBecomeKey: Bool { false }
+    // 항목을 클릭하면 키 윈도우가 되어 스페이스(QuickLook)·Delete·⌘V를 받는다. 앱 활성화는 하지 않는다.
+    override var canBecomeKey: Bool { true }
+
+    // MARK: - QuickLook (responder chain)
+
+    override func acceptsPreviewPanelControl(_ panel: QLPreviewPanel!) -> Bool { true }
+
+    override func beginPreviewPanelControl(_ panel: QLPreviewPanel!) {
+        panel.dataSource = QuickLookController.shared
+        panel.delegate = QuickLookController.shared
+    }
+
+    override func endPreviewPanelControl(_ panel: QLPreviewPanel!) {
+        panel.dataSource = nil
+        panel.delegate = nil
+    }
 
     override func sendEvent(_ event: NSEvent) {
         switch event.type {
