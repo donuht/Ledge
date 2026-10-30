@@ -6,11 +6,14 @@ enum ShowTrigger: String, CaseIterable, Sendable {
     case dragStart
     /// 드래그한 채 선반 쪽 화면 가장자리에 닿아야 나타난다(기본).
     case edge
+    /// 드래그를 시작하면 커서 옆에 나타난다(가장자리에 붙지 않음).
+    case cursor
 
     var title: String {
         switch self {
         case .dragStart: String(localized: "드래그 시작하면 바로")
         case .edge: String(localized: "가장자리에 닿으면")
+        case .cursor: String(localized: "커서 옆에")
         }
     }
 

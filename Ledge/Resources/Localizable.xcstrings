@@ -1141,6 +1141,26 @@
           }
         }
       }
+    },
+    "커서 옆에": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next to the cursor"
+          }
+        }
+      }
+    },
+    "드래그를 시작하면 커서 옆에 나타나고, 비어 있으면 사라집니다. 메뉴로 열면 그때의 커서 옆에 뜹니다.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appears next to the cursor when a drag starts and hides when empty. Opening it from the menu shows it next to the cursor too."
+          }
+        }
+      }
     }
   }
 }

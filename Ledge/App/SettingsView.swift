@@ -146,6 +146,7 @@ struct SettingsView: View {
         switch settings.showTrigger {
         case .dragStart: String(localized: "드래그를 시작하면 바로 나타나고, 비어 있으면 사라집니다.")
         case .edge: String(localized: "파일을 끌고 화면의 \(settings.edge.title) 가장자리에 닿으면 나타나고, 비어 있으면 사라집니다.")
+        case .cursor: String(localized: "드래그를 시작하면 커서 옆에 나타나고, 비어 있으면 사라집니다. 메뉴로 열면 그때의 커서 옆에 뜹니다.")
         }
     }
 

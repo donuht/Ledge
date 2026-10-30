@@ -71,7 +71,11 @@ final class ShelfPanelController {
             isCurrentDragIgnored = AppSettings.shared.isIgnored(bundleID: front)
             if isCurrentDragIgnored { return }
             hideWorkItem?.cancel()
-            if AppSettings.shared.showTrigger == .dragStart, !isVisible { show() }
+            switch AppSettings.shared.showTrigger {
+            case .dragStart: if !isVisible { show() }
+            case .cursor: if !isVisible { showNearCursor() }
+            case .edge: break
+            }
         }
         dragMonitor.onDragMoved = { [weak self] mouse in
             guard let self, !isCurrentDragIgnored, !isVisible else { return }
@@ -117,7 +121,7 @@ final class ShelfPanelController {
     }
 
     private func refreshRootView() {
-        hostingView.rootView = ShelfView(store: store, edge: edge, isDropTargeted: isDropTargeted)
+        hostingView.rootView = ShelfView(store: store, edge: edge, isDropTargeted: isDropTargeted, isFloating: floatingOrigin != nil)
     }
 
     /// 클립보드 내용(파일·이미지·링크·글)을 선반에 추가한다(B7).
@@ -141,13 +145,38 @@ final class ShelfPanelController {
     func show() {
         LedgeLog.write("shelf show")
         hideWorkItem?.cancel()
+        if AppSettings.shared.showTrigger == .cursor, floatingOrigin == nil {
+            showNearCursor()
+            return
+        }
         position()
+        panel.orderFrontRegardless()
+    }
+
+    /// 커서 옆 모드: 마우스 오른쪽 아래에 띄운다(화면 밖으로 나가면 안쪽으로 당긴다).
+    private var floatingOrigin: NSPoint?
+
+    func showNearCursor() {
+        LedgeLog.write("shelf show near cursor")
+        hideWorkItem?.cancel()
+        let mouse = NSEvent.mouseLocation
+        let screen = NSScreen.screens.first { NSMouseInRect(mouse, $0.frame, false) } ?? NSScreen.main
+        guard let visible = screen?.visibleFrame else { return }
+        let size = AppSettings.shared.panelSize(for: edge)
+        var origin = NSPoint(x: mouse.x + 24, y: mouse.y - size.height + 24)
+        origin.x = min(max(origin.x, visible.minX), visible.maxX - size.width)
+        origin.y = min(max(origin.y, visible.minY), visible.maxY - size.height)
+        floatingOrigin = origin
+        panel.setFrame(NSRect(origin: origin, size: size), display: true)
+        applyMinSize()
+        refreshRootView()
         panel.orderFrontRegardless()
     }
 
     func hide() {
         LedgeLog.write("shelf hide")
         hideWorkItem?.cancel()
+        floatingOrigin = nil
         QuickLookController.shared.close()
         panel.orderOut(nil)
     }
@@ -198,7 +227,7 @@ final class ShelfPanelController {
         let newSize = panel.frame.size
         guard newSize != AppSettings.shared.panelSize(for: edge) else { return }
         AppSettings.shared.setCustomSize(newSize, for: edge)
-        position()
+        if floatingOrigin != nil { floatingOrigin = panel.frame.origin } else { position() }
     }
 
     /// 창 델리게이트: 라이브 리사이즈 종료만 받는다.
@@ -211,6 +240,10 @@ final class ShelfPanelController {
 
     /// 마우스가 있는 화면의 설정된 가장자리에 붙인다.
     private func position() {
+        if let floatingOrigin {
+            panel.setFrame(NSRect(origin: floatingOrigin, size: AppSettings.shared.panelSize(for: edge)), display: true)
+            return
+        }
         let mouse = NSEvent.mouseLocation
         let screen = NSScreen.screens.first { NSMouseInRect(mouse, $0.frame, false) } ?? NSScreen.main
         guard let visible = screen?.visibleFrame else { return }

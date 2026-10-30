@@ -6,6 +6,8 @@ struct ShelfView: View {
     @Bindable var store: ShelfStore
     var edge: ShelfEdge
     var isDropTargeted: Bool
+    /// 커서 옆에 떠 있을 때(벽에 안 붙음)는 네 모서리 모두 둥글게.
+    var isFloating: Bool = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -32,6 +34,9 @@ struct ShelfView: View {
     /// 벽(화면 가장자리)에 붙는 쪽 모서리는 직각, 나머지는 둥글게 — 진짜 벽에 붙은 선반처럼.
     private var shape: UnevenRoundedRectangle {
         let r: CGFloat = 12
+        if isFloating {
+            return UnevenRoundedRectangle(topLeadingRadius: r, bottomLeadingRadius: r, bottomTrailingRadius: r, topTrailingRadius: r, style: .continuous)
+        }
         return switch edge {
         case .left: UnevenRoundedRectangle(topLeadingRadius: 0, bottomLeadingRadius: 0, bottomTrailingRadius: r, topTrailingRadius: r, style: .continuous)
         case .right: UnevenRoundedRectangle(topLeadingRadius: r, bottomLeadingRadius: r, bottomTrailingRadius: 0, topTrailingRadius: 0, style: .continuous)
