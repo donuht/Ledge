@@ -1,0 +1,174 @@
+import AppKit
+
+func rgb(_ r: CGFloat, _ g: CGFloat, _ b: CGFloat) -> NSColor { NSColor(red: r, green: g, blue: b, alpha: 1) }
+
+func squircle(_ size: CGFloat) -> (NSRect, NSBezierPath, CGFloat) {
+    let s = size / 1024
+    let inset = 100 * s
+    let rect = NSRect(x: inset, y: inset, width: size - inset * 2, height: size - inset * 2)
+    return (rect, NSBezierPath(roundedRect: rect, xRadius: 185 * s, yRadius: 185 * s), s)
+}
+
+func withShadow(_ alpha: CGFloat, blur: CGFloat, dy: CGFloat, _ body: () -> Void) {
+    let sh = NSShadow()
+    sh.shadowColor = NSColor.black.withAlphaComponent(alpha)
+    sh.shadowBlurRadius = blur
+    sh.shadowOffset = NSSize(width: 0, height: dy)
+    NSGraphicsContext.saveGraphicsState(); sh.set(); body(); NSGraphicsContext.restoreGraphicsState()
+}
+
+// A. 미니멀 — 따뜻한 주황 단색, 흰 선반 한 줄과 점 셋
+func drawA(_ size: CGFloat) {
+    let (rect, bg, s) = squircle(size)
+    withShadow(0.25, blur: 24 * s, dy: -12 * s) { rgb(0.98, 0.55, 0.20).setFill(); bg.fill() }
+    NSGraphicsContext.saveGraphicsState(); bg.addClip()
+    NSGradient(colors: [rgb(1.00, 0.66, 0.28), rgb(0.95, 0.45, 0.16)])!.draw(in: rect, angle: -90)
+    let shelfY = rect.minY + rect.height * 0.36
+    let shelf = NSBezierPath(roundedRect: NSRect(x: rect.minX + 120 * s, y: shelfY, width: rect.width - 240 * s, height: 56 * s), xRadius: 28 * s, yRadius: 28 * s)
+    withShadow(0.25, blur: 20 * s, dy: -10 * s) { NSColor.white.setFill(); shelf.fill() }
+    let dots: [(CGFloat, CGFloat, CGFloat)] = [(180, 150, 150), (380, 110, 220), (540, 120, 120)]
+    for (x, w, h) in dots {
+        let p = NSBezierPath(roundedRect: NSRect(x: rect.minX + x * s, y: shelfY + 70 * s, width: w * s, height: h * s), xRadius: 24 * s, yRadius: 24 * s)
+        withShadow(0.2, blur: 14 * s, dy: -6 * s) { NSColor.white.withAlphaComponent(0.92).setFill(); p.fill() }
+    }
+    NSGraphicsContext.restoreGraphicsState()
+}
+
+// B. 실제 앱 모양 — 밝은 배경, 오른쪽 벽에 붙은 세로 선반(왼쪽만 둥글게), 안에 항목 셋
+func drawB(_ size: CGFloat) {
+    let (rect, bg, s) = squircle(size)
+    withShadow(0.25, blur: 24 * s, dy: -12 * s) { rgb(0.93, 0.94, 0.97).setFill(); bg.fill() }
+    NSGraphicsContext.saveGraphicsState(); bg.addClip()
+    NSGradient(colors: [rgb(0.97, 0.97, 0.99), rgb(0.86, 0.88, 0.93)])!.draw(in: rect, angle: -90)
+    // 벽에 붙은 패널
+    let pw = rect.width * 0.46, ph = rect.height * 0.74
+    let panelRect = NSRect(x: rect.maxX - pw, y: rect.midY - ph / 2, width: pw, height: ph)
+    let r = 60 * s
+    let panel = NSBezierPath()
+    panel.move(to: NSPoint(x: panelRect.maxX, y: panelRect.minY))
+    panel.line(to: NSPoint(x: panelRect.minX + r, y: panelRect.minY))
+    panel.appendArc(withCenter: NSPoint(x: panelRect.minX + r, y: panelRect.minY + r), radius: r, startAngle: 270, endAngle: 180, clockwise: true)
+    panel.line(to: NSPoint(x: panelRect.minX, y: panelRect.maxY - r))
+    panel.appendArc(withCenter: NSPoint(x: panelRect.minX + r, y: panelRect.maxY - r), radius: r, startAngle: 180, endAngle: 90, clockwise: true)
+    panel.line(to: NSPoint(x: panelRect.maxX, y: panelRect.maxY))
+    panel.close()
+    withShadow(0.3, blur: 36 * s, dy: -16 * s) { rgb(0.16, 0.20, 0.30).setFill(); panel.fill() }
+    NSGraphicsContext.saveGraphicsState(); panel.addClip()
+    NSGradient(colors: [rgb(0.27, 0.36, 0.56), rgb(0.12, 0.16, 0.28)])!.draw(in: panelRect, angle: -90)
+    NSGraphicsContext.restoreGraphicsState()
+    // 항목 셋 (세로 쌓기)
+    let colors = [rgb(1.00, 0.78, 0.30), NSColor(white: 0.97, alpha: 1), rgb(0.42, 0.80, 0.95)]
+    let ih = (ph - 4 * 40 * s) / 3
+    for i in 0..<3 {
+        let y = panelRect.maxY - 40 * s - CGFloat(i + 1) * ih - CGFloat(i) * 40 * s
+        let ir = NSRect(x: panelRect.minX + 50 * s, y: y, width: pw - 90 * s, height: ih)
+        let p = NSBezierPath(roundedRect: ir, xRadius: 28 * s, yRadius: 28 * s)
+        withShadow(0.3, blur: 14 * s, dy: -6 * s) { colors[i].setFill(); p.fill() }
+    }
+    // 왼쪽에서 날아드는 작은 카드 + 화살
+    let card = NSBezierPath(roundedRect: NSRect(x: rect.minX + 90 * s, y: rect.midY - 60 * s, width: 150 * s, height: 120 * s), xRadius: 24 * s, yRadius: 24 * s)
+    withShadow(0.25, blur: 16 * s, dy: -8 * s) { rgb(0.98, 0.55, 0.20).setFill(); card.fill() }
+    let arrow = NSBezierPath()
+    arrow.lineWidth = 22 * s; arrow.lineCapStyle = .round; arrow.lineJoinStyle = .round
+    arrow.move(to: NSPoint(x: rect.minX + 270 * s, y: rect.midY))
+    arrow.line(to: NSPoint(x: rect.minX + 370 * s, y: rect.midY))
+    arrow.move(to: NSPoint(x: rect.minX + 320 * s, y: rect.midY + 45 * s))
+    arrow.line(to: NSPoint(x: rect.minX + 372 * s, y: rect.midY))
+    arrow.line(to: NSPoint(x: rect.minX + 320 * s, y: rect.midY - 45 * s))
+    rgb(0.40, 0.44, 0.55).setStroke(); arrow.stroke()
+    NSGraphicsContext.restoreGraphicsState()
+}
+
+// C. 다크 글래스 — 거의 검은 배경, 빛나는 청록 선반 선, 반투명 유리 항목
+func drawC(_ size: CGFloat) {
+    let (rect, bg, s) = squircle(size)
+    withShadow(0.3, blur: 24 * s, dy: -12 * s) { rgb(0.07, 0.08, 0.11).setFill(); bg.fill() }
+    NSGraphicsContext.saveGraphicsState(); bg.addClip()
+    NSGradient(colors: [rgb(0.13, 0.15, 0.20), rgb(0.05, 0.06, 0.09)])!.draw(in: rect, angle: -90)
+    let shelfY = rect.minY + rect.height * 0.34
+    let glow = NSBezierPath(roundedRect: NSRect(x: rect.minX + 110 * s, y: shelfY, width: rect.width - 220 * s, height: 40 * s), xRadius: 20 * s, yRadius: 20 * s)
+    let gsh = NSShadow(); gsh.shadowColor = rgb(0.25, 0.85, 0.95).withAlphaComponent(0.9); gsh.shadowBlurRadius = 50 * s; gsh.shadowOffset = .zero
+    NSGraphicsContext.saveGraphicsState(); gsh.set(); rgb(0.45, 0.92, 1.0).setFill(); glow.fill(); NSGraphicsContext.restoreGraphicsState()
+    let items: [(CGFloat, CGFloat, CGFloat)] = [(160, 170, 230), (370, 150, 290), (560, 170, 170)]
+    for (x, w, h) in items {
+        let ir = NSRect(x: rect.minX + x * s, y: shelfY + 50 * s, width: w * s, height: h * s)
+        let p = NSBezierPath(roundedRect: ir, xRadius: 26 * s, yRadius: 26 * s)
+        NSColor.white.withAlphaComponent(0.10).setFill(); p.fill()
+        p.lineWidth = 8 * s; NSColor.white.withAlphaComponent(0.55).setStroke(); p.stroke()
+    }
+    NSGraphicsContext.restoreGraphicsState()
+}
+
+// D. 종이 더미 — 미색 배경, 선반 위에 비스듬히 겹친 사진·종이·카드 (아날로그 느낌)
+func drawD(_ size: CGFloat) {
+    let (rect, bg, s) = squircle(size)
+    withShadow(0.25, blur: 24 * s, dy: -12 * s) { rgb(0.96, 0.93, 0.86).setFill(); bg.fill() }
+    NSGraphicsContext.saveGraphicsState(); bg.addClip()
+    NSGradient(colors: [rgb(0.99, 0.97, 0.92), rgb(0.93, 0.88, 0.78)])!.draw(in: rect, angle: -90)
+    let shelfY = rect.minY + rect.height * 0.30
+    let shelf = NSRect(x: rect.minX, y: shelfY, width: rect.width, height: 50 * s)
+    withShadow(0.3, blur: 28 * s, dy: -14 * s) { rgb(0.45, 0.32, 0.22).setFill(); NSBezierPath(rect: shelf).fill() }
+    rgb(0.60, 0.44, 0.30).setFill(); NSBezierPath(rect: NSRect(x: shelf.minX, y: shelf.maxY - 16 * s, width: shelf.width, height: 16 * s)).fill()
+    func card(x: CGFloat, w: CGFloat, h: CGFloat, angle: CGFloat, color: NSColor, body: (NSRect) -> Void = { _ in }) {
+        let t = NSAffineTransform()
+        t.translateX(by: rect.minX + x * s, yBy: shelf.maxY)
+        t.rotate(byDegrees: angle)
+        NSGraphicsContext.saveGraphicsState(); t.concat()
+        let r = NSRect(x: 0, y: 0, width: w * s, height: h * s)
+        withShadow(0.28, blur: 18 * s, dy: -8 * s) { color.setFill(); NSBezierPath(roundedRect: r, xRadius: 10 * s, yRadius: 10 * s).fill() }
+        body(r)
+        NSGraphicsContext.restoreGraphicsState()
+    }
+    card(x: 120, w: 230, h: 300, angle: 6, color: NSColor.white) { r in
+        rgb(0.42, 0.72, 0.90).setFill(); NSBezierPath(rect: r.insetBy(dx: 22 * s, dy: 22 * s).offsetBy(dx: 0, dy: 22 * s)).fill()
+        rgb(1, 0.92, 0.5).setFill(); NSBezierPath(ovalIn: NSRect(x: r.maxX - 90 * s, y: r.maxY - 90 * s, width: 36 * s, height: 36 * s)).fill()
+    }
+    card(x: 330, w: 220, h: 330, angle: -4, color: NSColor(white: 0.99, alpha: 1)) { r in
+        rgb(0.75, 0.73, 0.70).setFill()
+        for i in 0..<5 { NSBezierPath(roundedRect: NSRect(x: r.minX + 30 * s, y: r.maxY - (60 + CGFloat(i) * 48) * s, width: (160 - CGFloat(i % 2) * 40) * s, height: 14 * s), xRadius: 7 * s, yRadius: 7 * s).fill() }
+    }
+    card(x: 560, w: 190, h: 200, angle: 10, color: rgb(1.00, 0.78, 0.30))
+    NSGraphicsContext.restoreGraphicsState()
+}
+
+let variants: [(String, (CGFloat) -> Void)] = [("A", drawA), ("B", drawB), ("C", drawC), ("D", drawD)]
+let out = URL(fileURLWithPath: CommandLine.arguments[1])
+try? FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
+
+func render(_ size: CGFloat, _ body: (CGFloat) -> Void) -> NSBitmapImageRep {
+    let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(size), pixelsHigh: Int(size), bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
+    NSGraphicsContext.saveGraphicsState()
+    NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
+    NSGraphicsContext.current?.imageInterpolation = .high
+    body(size)
+    NSGraphicsContext.restoreGraphicsState()
+    return rep
+}
+
+var reps: [NSBitmapImageRep] = []
+for (name, fn) in variants {
+    let rep = render(512, fn)
+    try! rep.representation(using: .png, properties: [:])!.write(to: out.appendingPathComponent("Ledge-icon-\(name).png"))
+    reps.append(rep)
+}
+// 비교표: 2x2 (512) + 작은 크기(64·32)도 함께
+let W = 1200, H = 1400
+let sheet = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: W, pixelsHigh: H, bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
+NSGraphicsContext.saveGraphicsState()
+NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: sheet)
+NSGraphicsContext.current?.imageInterpolation = .high
+rgb(0.92, 0.92, 0.93).setFill(); NSBezierPath(rect: NSRect(x: 0, y: 0, width: W, height: H)).fill()
+let labels = ["A  미니멀 (주황)", "B  앱 모양 (벽에 붙은 패널)", "C  다크 글래스", "D  종이 더미 (아날로그)"]
+let attrs: [NSAttributedString.Key: Any] = [.font: NSFont.systemFont(ofSize: 34, weight: .semibold), .foregroundColor: NSColor.black]
+for (i, rep) in reps.enumerated() {
+    let col = i % 2, row = i / 2
+    let x = 60 + col * 560, y = H - 60 - (row + 1) * 660 + 100
+    let img = NSImage(size: NSSize(width: 512, height: 512)); img.addRepresentation(rep)
+    img.draw(in: NSRect(x: x, y: y + 60, width: 512, height: 512))
+    img.draw(in: NSRect(x: x + 520 - 64 - 40, y: y - 20, width: 64, height: 64))
+    img.draw(in: NSRect(x: x + 520 - 40 - 64 - 32 - 20, y: y - 20 + 16, width: 32, height: 32))
+    (labels[i] as NSString).draw(at: NSPoint(x: x, y: y - 10), withAttributes: attrs)
+}
+NSGraphicsContext.restoreGraphicsState()
+try! sheet.representation(using: .png, properties: [:])!.write(to: out.appendingPathComponent("Ledge-icon-variants.png"))
+print("done")
