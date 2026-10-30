@@ -190,7 +190,7 @@ final class DraggableItemView: NSView, NSDraggingSource {
     func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
         switch context {
         case .withinApplication: return []
-        case .outsideApplication: return [.copy, .move, .link, .generic]
+        case .outsideApplication: return [.copy, .move, .generic]
         @unknown default: return [.copy, .generic]
         }
     }
