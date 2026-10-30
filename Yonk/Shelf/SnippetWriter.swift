@@ -69,6 +69,22 @@ enum SnippetWriter {
         return urls.first { !$0.isFileURL }
     }
 
+    // MARK: - HTML (.html)
+
+    /// 웹에서 선택해 끌어온 HTML 조각을 독립 .html 파일로 저장한다.
+    static func writeHTML(_ html: String, plainText: String?) -> URL? {
+        let firstLine = (plainText ?? "").split(whereSeparator: \.isNewline).first.map(String.init) ?? ""
+        let stem = String(firstLine.trimmingCharacters(in: .whitespaces).prefix(40))
+        let name = stem.isEmpty ? "웹 \(timestamp())" : sanitize(stem)
+        let document: String
+        if html.range(of: "<html", options: .caseInsensitive) != nil {
+            document = html
+        } else {
+            document = "<!DOCTYPE html>\n<html><head><meta charset=\"utf-8\"><title>\(name)</title></head><body>\n\(html)\n</body></html>\n"
+        }
+        return write(data: Data(document.utf8), name: name, ext: "html")
+    }
+
     // MARK: - 텍스트 (.txt)
 
     static func writeText(_ text: String) -> URL? {
@@ -80,7 +96,7 @@ enum SnippetWriter {
 
     // MARK: - 공통
 
-    private static func write(data: Data, name: String, ext: String) -> URL? {
+    static func write(data: Data, name: String, ext: String) -> URL? {
         let url = uniqueURL(name: name, ext: ext)
         do {
             try data.write(to: url, options: .atomic)
@@ -102,14 +118,14 @@ enum SnippetWriter {
         return candidate
     }
 
-    private static func sanitize(_ s: String) -> String {
+    static func sanitize(_ s: String) -> String {
         let bad = CharacterSet(charactersIn: "/:\\?%*|\"<>")
         let cleaned = s.components(separatedBy: bad).joined(separator: "-")
         let trimmed = cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? "항목 \(timestamp())" : String(trimmed.prefix(80))
     }
 
-    private static func timestamp() -> String {
+    static func timestamp() -> String {
         let f = DateFormatter()
         f.dateFormat = "yyyy-MM-dd HH.mm.ss"
         return f.string(from: Date())

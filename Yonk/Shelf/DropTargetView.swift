@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 
 /// 패널 바닥에 깔리는 드롭 대상.
-/// 받는 순서: 파일 URL → 파일 프로미스(브라우저 이미지·메일 첨부) → 이미지 데이터 → 웹 URL → 텍스트.
+/// 받는 순서: 파일 URL → 파일 프로미스(신형·구형) → 이미지 데이터 → 이미지 URL 다운로드 → HTML → 웹 URL → 텍스트.
 /// 파일이 아닌 것은 SnippetWriter로 실제 파일을 만든 뒤 선반에 올린다.
 final class DropTargetView: NSView {
     override var mouseDownCanMoveWindow: Bool { false }
@@ -20,7 +20,7 @@ final class DropTargetView: NSView {
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
-        var types: [NSPasteboard.PasteboardType] = [.fileURL, .png, .tiff, .URL, .string]
+        var types: [NSPasteboard.PasteboardType] = [.fileURL, .png, .tiff, .URL, .html, .string, WebImporter.legacyPromiseType]
         types += NSFilePromiseReceiver.readableDraggedTypes.map { NSPasteboard.PasteboardType($0) }
         registerForDraggedTypes(types)
     }
@@ -72,25 +72,59 @@ final class DropTargetView: NSView {
             return true
         }
 
-        // 3. 이미지 데이터.
+        // 3. 구형 파일 프로미스(Chrome·Electron 이미지).
+        if WebImporter.hasLegacyPromise(pb) {
+            let fallback = snapshot(of: pb)
+            let started = WebImporter.receiveLegacyPromise(sender) { [weak self] urls in
+                guard let self else { return }
+                if !urls.isEmpty { onDrop?(urls) } else { importWebContent(from: fallback) }
+            }
+            if started { return true }
+        }
+
+        importWebContent(from: pb)
+        return true
+    }
+
+    /// 파일이 아닌 웹 내용: 이미지 데이터 → 이미지 URL 다운로드 → HTML → 링크 → 텍스트 순.
+    private func importWebContent(from pb: NSPasteboard) {
+        YonkLog.write("web import url=\(SnippetWriter.webURL(from: pb)?.absoluteString.prefix(120) ?? "-") html=\(pb.string(forType: .html)?.prefix(160) ?? "-")")
         if let url = SnippetWriter.writeImage(from: pb) {
             onDrop?([url])
-            return true
+            return
         }
+        if let imageURL = WebImporter.imageURL(from: pb) {
+            let fallback = snapshot(of: pb)
+            WebImporter.downloadImage(imageURL, referer: SnippetWriter.webURL(from: pb)) { [weak self] url in
+                guard let self else { return }
+                if let url { onDrop?([url]) } else { importNonImageWebContent(from: fallback) }
+            }
+            return
+        }
+        importNonImageWebContent(from: pb)
+    }
 
-        // 4. 웹 링크 → .webloc
+    private func importNonImageWebContent(from pb: NSPasteboard) {
+        let text = pb.string(forType: .string)
         if let web = SnippetWriter.webURL(from: pb), let url = SnippetWriter.writeWebLocation(web) {
             onDrop?([url])
-            return true
-        }
-
-        // 5. 텍스트 → .txt
-        if let text = pb.string(forType: .string), !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-           let url = SnippetWriter.writeText(text) {
+        } else if let html = pb.string(forType: .html), !html.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                  let url = SnippetWriter.writeHTML(html, plainText: text) {
             onDrop?([url])
-            return true
+        } else if let text, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                  let url = SnippetWriter.writeText(text) {
+            onDrop?([url])
+        } else {
+            YonkLog.write("web import: nothing usable, types=\(pb.types?.map(\.rawValue) ?? [])")
         }
-        return false
+    }
+
+    /// 드래그 페이스트보드는 드롭이 끝나면 비워지므로, 비동기 처리용으로 프로미스 타입을 뺀 복사본을 만든다.
+    private func snapshot(of pb: NSPasteboard) -> NSPasteboard {
+        let copy = NSPasteboard(name: NSPasteboard.Name("com.jasonhwangfilm.yonk.snapshot-\(UUID().uuidString)"))
+        copy.clearContents()
+        copy.writeObjects(pb.pasteboardItems?.compactMap { copyItem($0) } ?? [])
+        return copy
     }
 
     // MARK: - 파일 프로미스
@@ -98,9 +132,7 @@ final class DropTargetView: NSView {
     private func receivePromises(_ receivers: [NSFilePromiseReceiver], fallbackPasteboard pb: NSPasteboard) {
         let destination = SnippetWriter.directory
         // 프로미스가 전부 실패하면(일부 사이트) 이미지 데이터로 대신 저장하기 위해 미리 복사해 둔다.
-        let fallback = NSPasteboard(name: NSPasteboard.Name("com.jasonhwangfilm.yonk.promise-fallback"))
-        fallback.clearContents()
-        fallback.writeObjects(pb.pasteboardItems?.compactMap { copyItem($0) } ?? [])
+        let fallback = snapshot(of: pb)
 
         var pending = receivers.count
         var received: [URL] = []
@@ -117,10 +149,9 @@ final class DropTargetView: NSView {
                     if pending == 0 {
                         if !received.isEmpty {
                             self.onDrop?(received)
-                        } else if let image = SnippetWriter.writeImage(from: fallback) {
-                            self.onDrop?([image])
+                        } else {
+                            self.importWebContent(from: fallback)
                         }
-                        fallback.clearContents()
                     }
                 }
             }
@@ -128,7 +159,7 @@ final class DropTargetView: NSView {
     }
 
     private func copyItem(_ item: NSPasteboardItem) -> NSPasteboardItem? {
-        let promiseTypes = Set(NSFilePromiseReceiver.readableDraggedTypes)
+        let promiseTypes = Set(NSFilePromiseReceiver.readableDraggedTypes + [WebImporter.legacyPromiseType.rawValue])
         let copy = NSPasteboardItem()
         var any = false
         for type in item.types where !promiseTypes.contains(type.rawValue) {
@@ -150,7 +181,9 @@ final class DropTargetView: NSView {
     private func hasAcceptableContent(_ pb: NSPasteboard) -> Bool {
         if pb.canReadObject(forClasses: [NSURL.self], options: fileURLOptions) { return true }
         if pb.canReadObject(forClasses: [NSFilePromiseReceiver.self]) { return true }
+        if WebImporter.hasLegacyPromise(pb) { return true }
         if pb.canReadObject(forClasses: [NSImage.self]) { return true }
+        if let h = pb.string(forType: .html), !h.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return true }
         if pb.canReadObject(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: false]) { return true }
         if let s = pb.string(forType: .string), !s.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return true }
         return false
