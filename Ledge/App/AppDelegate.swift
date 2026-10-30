@@ -21,6 +21,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItemController: StatusItemController?
     private var shelfController: ShelfPanelController?
     private var hotkeyController: HotkeyController?
+    private var clipboardController: ClipboardController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSLog("Ledge: didFinishLaunching")
@@ -29,6 +30,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         shelfController = shelf
         statusItemController = StatusItemController(shelf: shelf)
         hotkeyController = HotkeyController(shelf: shelf)
+        let clipboard = ClipboardController(shelf: shelf)
+        clipboardController = clipboard
+        statusItemController?.clipboard = clipboard
         shelf.showAtLaunchIfNeeded()
     }
 

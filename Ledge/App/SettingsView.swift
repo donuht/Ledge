@@ -7,6 +7,7 @@ struct SettingsView: View {
     @Bindable var settings: AppSettings
     @State private var runningApps: [NSRunningApplication] = []
     @State private var selectedAppToAdd: String = ""
+    @State private var selectedClipboardAppToAdd: String = ""
 
     var body: some View {
         Form {
@@ -37,6 +38,34 @@ struct SettingsView: View {
             }
 
             Section {
+                Toggle("클립보드 기록 켜기", isOn: $settings.clipboardHistoryEnabled)
+                if settings.clipboardHistoryEnabled {
+                    KeyboardShortcuts.Recorder("기록 창 열기", name: .showClipboardHistory)
+                    clipboardIgnoredList
+                    HStack {
+                        Picker("제외 앱 추가", selection: $selectedClipboardAppToAdd) {
+                            Text("실행 중인 앱 선택…").tag("")
+                            ForEach(runningApps, id: \.bundleIdentifier) { app in
+                                Text(app.localizedName ?? app.bundleIdentifier ?? "?").tag(app.bundleIdentifier ?? "")
+                            }
+                        }
+                        Button("추가") {
+                            guard !selectedClipboardAppToAdd.isEmpty else { return }
+                            settings.addClipboardIgnored(bundleID: selectedClipboardAppToAdd)
+                            selectedClipboardAppToAdd = ""
+                        }
+                        .disabled(selectedClipboardAppToAdd.isEmpty)
+                    }
+                }
+            } header: {
+                Text("클립보드 기록")
+            } footer: {
+                Text("복사(⌘C)한 글·이미지·파일을 기억해 두었다가 다시 꺼냅니다. 다른 클립보드 앱을 쓰고 있으면 꺼 두세요. 비밀번호 관리자가 숨김 표시한 복사는 기록하지 않습니다.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section {
                 ignoredList
                 HStack {
                     Picker("앱 추가", selection: $selectedAppToAdd) {
@@ -61,7 +90,7 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 440, height: 520)
+        .frame(width: 440, height: 640)
         .onAppear(perform: refreshRunningApps)
     }
 
@@ -69,6 +98,26 @@ struct SettingsView: View {
         switch settings.showTrigger {
         case .dragStart: "드래그를 시작하면 바로 나타나고, 비어 있으면 사라집니다."
         case .edge: "파일을 끌고 화면의 \(settings.edge.title) 가장자리에 닿으면 나타나고, 비어 있으면 사라집니다."
+        }
+    }
+
+    @ViewBuilder
+    private var clipboardIgnoredList: some View {
+        if settings.clipboardIgnoredBundleIDs.isEmpty {
+            Text("제외 앱 없음").foregroundStyle(.secondary)
+        } else {
+            ForEach(settings.clipboardIgnoredBundleIDs, id: \.self) { id in
+                HStack {
+                    Text(displayName(for: id))
+                    Spacer()
+                    Button {
+                        settings.removeClipboardIgnored(bundleID: id)
+                    } label: {
+                        Image(systemName: "minus.circle")
+                    }
+                    .buttonStyle(.borderless)
+                }
+            }
         }
     }
 
@@ -120,7 +169,7 @@ final class SettingsWindowController {
             window.styleMask = [.titled, .closable]
             window.isReleasedWhenClosed = false
             // 그룹 Form은 고유 높이가 없어 창이 제목줄만 남도록 줄어든다. 크기를 명시한다.
-            window.setContentSize(NSSize(width: 440, height: 520))
+            window.setContentSize(NSSize(width: 440, height: 640))
             window.center()
             self.window = window
         }

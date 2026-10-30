@@ -10,11 +10,14 @@ final class StatusItemController: NSObject {
     private let settingsWindow = SettingsWindowController()
     private var edgeMenu: NSMenu?
     private var triggerMenu: NSMenu?
+    private let clipboardItem: NSMenuItem
+    weak var clipboard: ClipboardController?
 
     init(shelf: ShelfPanelController) {
         self.shelf = shelf
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         toggleItem = NSMenuItem(title: "선반 숨기기", action: #selector(toggleShelf), keyEquivalent: "")
+        clipboardItem = NSMenuItem(title: "클립보드 기록…", action: #selector(showClipboard), keyEquivalent: "")
         super.init()
 
         if let button = statusItem.button {
@@ -30,6 +33,8 @@ final class StatusItemController: NSObject {
         let paste = NSMenuItem(title: "클립보드 내용 추가", action: #selector(addFromClipboard), keyEquivalent: "")
         paste.target = self
         menu.addItem(paste)
+        clipboardItem.target = self
+        menu.addItem(clipboardItem)
         menu.addItem(.separator())
 
         let edgeItem = NSMenuItem(title: "선반 위치", action: nil, keyEquivalent: "")
@@ -66,6 +71,10 @@ final class StatusItemController: NSObject {
         menu.delegate = self
     }
 
+    @objc private func showClipboard() {
+        clipboard?.showWindow()
+    }
+
     @objc private func addFromClipboard() {
         shelf.addFromClipboard()
     }
@@ -92,6 +101,7 @@ final class StatusItemController: NSObject {
 extension StatusItemController: NSMenuDelegate {
     func menuWillOpen(_ menu: NSMenu) {
         toggleItem.title = shelf.isVisible ? "선반 숨기기" : "선반 보기"
+        clipboardItem.isHidden = !AppSettings.shared.clipboardHistoryEnabled
         for item in edgeMenu?.items ?? [] {
             item.state = (item.representedObject as? String) == AppSettings.shared.edge.rawValue ? .on : .off
         }

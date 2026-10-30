@@ -32,6 +32,22 @@ final class AppSettings {
         didSet { UserDefaults.standard.set(ignoredBundleIDs, forKey: Keys.ignoredBundleIDs) }
     }
 
+    /// 클립보드 기록 모듈. 기본 꺼짐(다른 클립보드 앱과 겹치지 않도록).
+    var clipboardHistoryEnabled: Bool {
+        didSet { UserDefaults.standard.set(clipboardHistoryEnabled, forKey: Keys.clipboardEnabled) }
+    }
+
+    /// 이 앱들이 맨 앞일 때 복사한 것은 기록하지 않는다(비밀번호 관리자 등).
+    var clipboardIgnoredBundleIDs: [String] {
+        didSet { UserDefaults.standard.set(clipboardIgnoredBundleIDs, forKey: Keys.clipboardIgnored) }
+    }
+
+    static let defaultClipboardIgnored = [
+        "com.1password.1password", "com.agilebits.onepassword7", "com.agilebits.onepassword-osx",
+        "com.apple.keychainaccess", "com.apple.Passwords", "com.bitwarden.desktop",
+        "com.lastpass.LastPass", "com.dashlane.Dashlane", "com.keepassxc.keepassxc",
+    ]
+
     /// 로그인 시 실행. SMAppService 상태를 그대로 반영한다.
     var launchAtLogin: Bool {
         get { SMAppService.mainApp.status == .enabled }
@@ -49,12 +65,16 @@ final class AppSettings {
 
     private enum Keys {
         static let ignoredBundleIDs = "behavior.ignoredBundleIDs"
+        static let clipboardEnabled = "clipboard.enabled"
+        static let clipboardIgnored = "clipboard.ignoredBundleIDs"
     }
 
     private init() {
         edge = ShelfEdge.saved
         showTrigger = ShowTrigger.saved
         ignoredBundleIDs = UserDefaults.standard.stringArray(forKey: Keys.ignoredBundleIDs) ?? []
+        clipboardHistoryEnabled = UserDefaults.standard.bool(forKey: Keys.clipboardEnabled)
+        clipboardIgnoredBundleIDs = UserDefaults.standard.stringArray(forKey: Keys.clipboardIgnored) ?? Self.defaultClipboardIgnored
     }
 
     func isIgnored(bundleID: String?) -> Bool {
@@ -69,5 +89,19 @@ final class AppSettings {
 
     func removeIgnored(bundleID: String) {
         ignoredBundleIDs.removeAll { $0 == bundleID }
+    }
+
+    func isClipboardIgnored(bundleID: String?) -> Bool {
+        guard let bundleID else { return false }
+        return clipboardIgnoredBundleIDs.contains(bundleID)
+    }
+
+    func addClipboardIgnored(bundleID: String) {
+        guard !clipboardIgnoredBundleIDs.contains(bundleID) else { return }
+        clipboardIgnoredBundleIDs.append(bundleID)
+    }
+
+    func removeClipboardIgnored(bundleID: String) {
+        clipboardIgnoredBundleIDs.removeAll { $0 == bundleID }
     }
 }
