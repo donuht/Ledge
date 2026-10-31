@@ -22,8 +22,8 @@ final class StatusItemController: NSObject {
         super.init()
 
         if let button = statusItem.button {
-            let image = NSImage(systemSymbolName: "tray.and.arrow.down.fill", accessibilityDescription: "Ledge")
-            image?.isTemplate = true
+            let image = Self.makeMenuBarImage()
+            image.accessibilityDescription = "Ledge"
             button.image = image
             button.toolTip = String(localized: "Ledge — 파일을 끌고 화면 가장자리에 닿으면 선반이 나타납니다")
         }
@@ -129,5 +129,22 @@ extension StatusItemController: NSMenuDelegate {
         for item in triggerMenu?.items ?? [] {
             item.state = (item.representedObject as? String) == AppSettings.shared.showTrigger.rawValue ? .on : .off
         }
+    }
+
+    /// 메뉴바 기호. Apple SF Symbol 대신 직접 그린 선반 실루엣(앱 아이콘과 같은 모티브).
+    /// 템플릿 이미지라 라이트·다크 메뉴바에서 자동으로 색이 맞춰진다. 18pt 캔버스, 픽셀 정렬.
+    static func makeMenuBarImage() -> NSImage {
+        let image = NSImage(size: NSSize(width: 18, height: 18), flipped: false) { _ in
+            NSColor.black.setFill()
+            // 선반
+            NSBezierPath(roundedRect: NSRect(x: 1, y: 4, width: 16, height: 2), xRadius: 1, yRadius: 1).fill()
+            // 선반 위 물건 셋 (앱 아이콘 A/E의 실루엣)
+            for (x, w, h) in [(2.0, 4.0, 5.0), (7.0, 4.0, 8.0), (12.0, 4.0, 4.0)] {
+                NSBezierPath(roundedRect: NSRect(x: x, y: 7, width: w, height: h), xRadius: 1, yRadius: 1).fill()
+            }
+            return true
+        }
+        image.isTemplate = true
+        return image
     }
 }
