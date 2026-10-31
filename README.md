@@ -20,9 +20,14 @@ macOS용 드래그 선반(shelf) 앱. 끌고 있던 파일·텍스트·링크·�
 
 ## 설치
 
-- macOS 14 Sonoma 이상.
+- macOS 14 Sonoma 이상, Apple Silicon·Intel 둘 다.
 - [Releases](../../releases)에서 `Ledge.zip`을 받아 풀고 `Ledge.app`을 응용 프로그램 폴더로 옮긴다.
-- **첫 실행 시 "확인되지 않은 개발자" 경고가 뜬다.** 아직 Apple Developer ID로 서명하지 않았기 때문이다. 앱을 **우클릭 → 열기**로 한 번만 열면 이후엔 그냥 실행된다. 그래도 막히면 터미널에서:
+- **첫 실행 때 "Apple에서 악성 소프트웨어가 없는지 확인할 수 없다"는 창이 뜬다.** 아직 Apple Developer ID로 서명·공증하지 않았기 때문이다. 한 번만 아래처럼 열어 주면 이후엔 그냥 실행된다.
+  1. 앱을 더블클릭 → 경고 창에서 **완료**를 누른다 (휴지통으로 이동은 누르지 않는다).
+  2. **시스템 설정 → 개인정보 보호 및 보안**으로 가서 아래로 내리면 "Ledge이(가) 차단되었습니다" 옆에 **그래도 열기** 버튼이 있다. 누르고 암호를 넣는다.
+  3. macOS 14 Sonoma 이하에서는 앱을 **우클릭 → 열기**로도 된다 (15 Sequoia부터는 이 방법이 막혔다).
+
+  터미널이 편하면 이 한 줄로 대신할 수 있다:
 
 ```bash
 xattr -dr com.apple.quarantine /Applications/Ledge.app
@@ -56,7 +61,7 @@ xcodebuild -scheme Ledge -configuration Release -derivedDataPath build
 
 Ledge is a menu-bar-only shelf app. It stays hidden until you start dragging something, then appears at a screen edge (slide it along the edge to wherever you like) or next to the cursor; drop the item on it, move to another window or Space, and drag it back out. It accepts files, folders, text, URLs, images (including web images dragged from a browser) and file promises. Items get thumbnails and QuickLook, can be stacked, locked, renamed, shared and restored. An optional clipboard-history module is included. Global hotkeys (`⌃⌥Y` toggle, `⌃⌥⇧Y` add Finder selection, `⌃⌥V` add clipboard) work without Accessibility permission. UI is in Korean and English.
 
-Requires macOS 14+. Download `Ledge.zip` from Releases, move `Ledge.app` to Applications. The app is not yet notarized, so right-click → Open on first launch (or run the `xattr` command above).
+Requires macOS 14+ (Apple Silicon and Intel). Download `Ledge.zip` from Releases and move `Ledge.app` to Applications. The app is not yet notarized, so the first launch is blocked: double-click it, choose **Done** in the warning, then go to **System Settings → Privacy & Security**, scroll down and click **Open Anyway**. (On macOS 14 and earlier, right-click → Open also works.) Or run the `xattr` command above.
 
 ## License
 
