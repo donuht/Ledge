@@ -22,3 +22,4 @@ Ledge.xcodeproj/
 
 # macOS
 .DS_Store
+dist/
