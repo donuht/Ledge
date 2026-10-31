@@ -11,7 +11,7 @@ macOS용 드래그 선반(shelf) 앱. 끌고 있던 파일·텍스트·링크·�
 ## 기능
 
 - **드래그하면 나타난다.** 평소엔 숨어 있다가 무언가를 끌기 시작하면 선반이 등장하고, 놓으면 사라진다.
-- **등장 위치**: 화면 가장자리(왼쪽/오른쪽/위/아래) 또는 **커서 옆**(끌다가 잠깐 멈추면 커서 옆에 뜸).
+- **등장 위치**: 화면 가장자리(왼쪽/오른쪽/위/아래) 또는 **커서 옆**(끌다가 잠깐 멈추면 커서 옆에 뜸). 가장자리 모드에선 선반을 끌어 그 변의 어디에 붙일지 정할 수 있고, 자리는 기억된다.
 - **받는 것**: Finder 파일·폴더, 텍스트, URL, 이미지(브라우저에서 끌어온 웹 이미지도 파일로 받음), 파일 프로미스(메일·사진 앱).
 - **선반에서**: 썸네일, QuickLook 미리보기(스페이스바), 여러 항목 스택으로 묶어 한 번에 꺼내기, 잠금(꺼내도 남김), 컨텍스트 메뉴(복사·이름 변경·공유·Finder에서 보기), 뺀 항목 되살리기.
 - **클립보드 기록**(선택 모듈): 복사한 내용이 쌓이고, 비밀번호 관리자 등에서 복사한 건 쌓이지 않음.
@@ -54,7 +54,7 @@ xcodebuild -scheme Ledge -configuration Release -derivedDataPath build
 
 ## English
 
-Ledge is a menu-bar-only shelf app. It stays hidden until you start dragging something, then appears at a screen edge or next to the cursor; drop the item on it, move to another window or Space, and drag it back out. It accepts files, folders, text, URLs, images (including web images dragged from a browser) and file promises. Items get thumbnails and QuickLook, can be stacked, locked, renamed, shared and restored. An optional clipboard-history module is included. Global hotkeys (`⌃⌥Y` toggle, `⌃⌥⇧Y` add Finder selection, `⌃⌥V` add clipboard) work without Accessibility permission. UI is in Korean and English.
+Ledge is a menu-bar-only shelf app. It stays hidden until you start dragging something, then appears at a screen edge (slide it along the edge to wherever you like) or next to the cursor; drop the item on it, move to another window or Space, and drag it back out. It accepts files, folders, text, URLs, images (including web images dragged from a browser) and file promises. Items get thumbnails and QuickLook, can be stacked, locked, renamed, shared and restored. An optional clipboard-history module is included. Global hotkeys (`⌃⌥Y` toggle, `⌃⌥⇧Y` add Finder selection, `⌃⌥V` add clipboard) work without Accessibility permission. UI is in Korean and English.
 
 Requires macOS 14+. Download `Ledge.zip` from Releases, move `Ledge.app` to Applications. The app is not yet notarized, so right-click → Open on first launch (or run the `xattr` command above).
 
