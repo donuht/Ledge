@@ -21,12 +21,13 @@ func withShadow(_ alpha: CGFloat, blur: CGFloat, dy: CGFloat, _ body: () -> Void
     NSGraphicsContext.saveGraphicsState(); sh.set(); body(); NSGraphicsContext.restoreGraphicsState()
 }
 
-let orangeTop = rgb(1.00, 0.66, 0.28), orangeBot = rgb(0.95, 0.45, 0.16)
-func bgOrange(_ size: CGFloat, shadow: Bool = true) -> (NSRect, NSBezierPath, CGFloat) {
+// 색: 네이비 바탕 + 노랑 선 (2026-10-31 감독 선택)
+let navyTop = rgb(0.17, 0.24, 0.42), navyBot = rgb(0.08, 0.12, 0.26), navyBase = rgb(0.12, 0.17, 0.33), yellow = rgb(1.0, 0.82, 0.30)
+func bgNavy(_ size: CGFloat, shadow: Bool = true) -> (NSRect, NSBezierPath, CGFloat) {
     let (rect, bg, s) = squircle(size)
-    if shadow { withShadow(0.25, blur: 24 * s, dy: -12 * s) { rgb(0.98, 0.55, 0.20).setFill(); bg.fill() } } else { rgb(0.98, 0.55, 0.20).setFill(); bg.fill() }
+    if shadow { withShadow(0.25, blur: 24 * s, dy: -12 * s) { navyBase.setFill(); bg.fill() } } else { navyBase.setFill(); bg.fill() }
     NSGraphicsContext.saveGraphicsState(); bg.addClip()
-    NSGradient(colors: [orangeTop, orangeBot])!.draw(in: rect, angle: -90)
+    NSGradient(colors: [navyTop, navyBot])!.draw(in: rect, angle: -90)
     return (rect, bg, s)
 }
 /// ㄴ자 벽 선반 (흰색). 왼쪽 벽 + 아래 선반. 반환: 선반 윗면 y, 벽 오른쪽 x
@@ -45,10 +46,10 @@ func wallShelf(_ rect: NSRect, _ s: CGFloat, thick: CGFloat = 80, shadow: Bool =
     p.line(to: NSPoint(x: x0 + r, y: y0 + h)); p.appendArc(withCenter: NSPoint(x: x0 + r, y: y0 + h - r), radius: r, startAngle: 90, endAngle: 180)
     p.line(to: NSPoint(x: x0, y: y0 + r)); p.appendArc(withCenter: NSPoint(x: x0 + r, y: y0 + r), radius: r, startAngle: 180, endAngle: 270)
     p.close()
-    if shadow { withShadow(0.25, blur: 22 * s, dy: -10 * s) { NSColor.white.setFill(); p.fill() } } else { NSColor.white.setFill(); p.fill() }
+    if shadow { withShadow(0.25, blur: 22 * s, dy: -10 * s) { yellow.setFill(); p.fill() } } else { yellow.setFill(); p.fill() }
     return (y0 + t, x0 + t)
 }
-func bigArrow(cx: CGFloat, top: CGFloat, bottom: CGFloat, s: CGFloat, w: CGFloat = 70, color: NSColor = .white) {
+func bigArrow(cx: CGFloat, top: CGFloat, bottom: CGFloat, s: CGFloat, w: CGFloat = 70, color: NSColor = yellow) {
     let p = NSBezierPath(); p.lineWidth = w * s; p.lineCapStyle = .round; p.lineJoinStyle = .round
     p.move(to: NSPoint(x: cx, y: top)); p.line(to: NSPoint(x: cx, y: bottom))
     let hd = 110 * s
@@ -58,7 +59,7 @@ func bigArrow(cx: CGFloat, top: CGFloat, bottom: CGFloat, s: CGFloat, w: CGFloat
 
 // V1. 메뉴바와 동일 — ㄴ + 굵은 화살표
 func drawV1(_ size: CGFloat) {
-    let (rect, _, s) = bgOrange(size)
+    let (rect, _, s) = bgNavy(size)
     let (top, wallX) = wallShelf(rect, s)
     let cx = (wallX + rect.maxX - 130 * s) / 2
     bigArrow(cx: cx, top: rect.maxY - 180 * s, bottom: top + 110 * s, s: s)
@@ -66,14 +67,14 @@ func drawV1(_ size: CGFloat) {
 }
 // 소형: V1 과 동일하되 그림자 없음, 더 굵게
 func drawVSmall(_ size: CGFloat) {
-    let (rect, _, s) = bgOrange(size, shadow: false)
+    let (rect, _, s) = bgNavy(size, shadow: false)
     let (top, wallX) = wallShelf(rect, s, thick: 110, shadow: false)
     let cx = (wallX + rect.maxX - 130 * s) / 2
     let p = NSBezierPath(); p.lineWidth = 100 * s; p.lineCapStyle = .round; p.lineJoinStyle = .round
     let bottom = top + 120 * s, hd = 140 * s
     p.move(to: NSPoint(x: cx, y: rect.maxY - 190 * s)); p.line(to: NSPoint(x: cx, y: bottom))
     p.move(to: NSPoint(x: cx - hd, y: bottom + hd)); p.line(to: NSPoint(x: cx, y: bottom)); p.line(to: NSPoint(x: cx + hd, y: bottom + hd))
-    NSColor.white.setStroke(); p.stroke()
+    yellow.setStroke(); p.stroke()
     NSGraphicsContext.restoreGraphicsState()
 }
 
