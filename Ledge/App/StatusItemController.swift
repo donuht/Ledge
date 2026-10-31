@@ -131,17 +131,19 @@ extension StatusItemController: NSMenuDelegate {
         }
     }
 
-    /// 메뉴바 기호. Apple SF Symbol 대신 직접 그린 선반 실루엣(앱 아이콘과 같은 모티브).
+    /// 메뉴바 기호. Apple SF Symbol 대신 직접 그린 "ㄴ자 벽 선반에 떨어뜨리기"(앱 아이콘과 같은 모티브).
     /// 템플릿 이미지라 라이트·다크 메뉴바에서 자동으로 색이 맞춰진다. 18pt 캔버스, 픽셀 정렬.
     static func makeMenuBarImage() -> NSImage {
         let image = NSImage(size: NSSize(width: 18, height: 18), flipped: false) { _ in
-            NSColor.black.setFill()
-            // 선반
-            NSBezierPath(roundedRect: NSRect(x: 1, y: 4, width: 16, height: 2), xRadius: 1, yRadius: 1).fill()
-            // 선반 위 물건 셋 (앱 아이콘 A/E의 실루엣)
-            for (x, w, h) in [(2.0, 4.0, 5.0), (7.0, 4.0, 8.0), (12.0, 4.0, 4.0)] {
-                NSBezierPath(roundedRect: NSRect(x: x, y: 7, width: w, height: h), xRadius: 1, yRadius: 1).fill()
-            }
+            NSColor.black.setFill(); NSColor.black.setStroke()
+            // 선반(가로)과 벽(세로) — ㄴ
+            NSBezierPath(roundedRect: NSRect(x: 2, y: 3, width: 14, height: 2), xRadius: 1, yRadius: 1).fill()
+            NSBezierPath(roundedRect: NSRect(x: 2, y: 3, width: 2, height: 13), xRadius: 1, yRadius: 1).fill()
+            // 선반으로 내려오는 화살표
+            let shaft = NSBezierPath(); shaft.lineWidth = 1.8; shaft.lineCapStyle = .round
+            shaft.move(to: NSPoint(x: 10.5, y: 15.5)); shaft.line(to: NSPoint(x: 10.5, y: 7.5)); shaft.stroke()
+            let head = NSBezierPath(); head.lineWidth = 1.8; head.lineCapStyle = .round; head.lineJoinStyle = .round
+            head.move(to: NSPoint(x: 7.3, y: 10.7)); head.line(to: NSPoint(x: 10.5, y: 7.5)); head.line(to: NSPoint(x: 13.7, y: 10.7)); head.stroke()
             return true
         }
         image.isTemplate = true

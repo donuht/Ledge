@@ -1,7 +1,8 @@
 import AppKit
 
-// Ledge 앱 아이콘 원본. 실행: swiftc -O -o gen AppIcon-source.swift && ./gen <appiconset 폴더>
-// 128px 이상: E(선반 위 폴더·문서·사진). 64px 이하: 단순화판(선반 + 폴더·문서, 더 크고 굵게).
+// Ledge 앱 아이콘 원본 (2026-10-31 확정: "ㄴ자 벽 선반에 떨어뜨리기", 메뉴바 기호와 같은 모티브).
+// 실행: swiftc -O -o gen AppIcon-source.swift && ./gen <AppIcon.appiconset 폴더>
+// 128px 이상: drawV1(그림자 있음). 64px 이하: drawVSmall(그림자 없음, 더 굵게).
 
 func rgb(_ r: CGFloat, _ g: CGFloat, _ b: CGFloat) -> NSColor { NSColor(red: r, green: g, blue: b, alpha: 1) }
 
@@ -20,104 +21,59 @@ func withShadow(_ alpha: CGFloat, blur: CGFloat, dy: CGFloat, _ body: () -> Void
     NSGraphicsContext.saveGraphicsState(); sh.set(); body(); NSGraphicsContext.restoreGraphicsState()
 }
 
-// ---------- 공용 도형 ----------
-/// 접힌 모서리 문서. (x,y)는 좌하단, w·h 크기, fold 접힘 크기
-func docPath(x: CGFloat, y: CGFloat, w: CGFloat, h: CGFloat, fold: CGFloat, r: CGFloat) -> (NSBezierPath, NSBezierPath) {
+let orangeTop = rgb(1.00, 0.66, 0.28), orangeBot = rgb(0.95, 0.45, 0.16)
+func bgOrange(_ size: CGFloat, shadow: Bool = true) -> (NSRect, NSBezierPath, CGFloat) {
+    let (rect, bg, s) = squircle(size)
+    if shadow { withShadow(0.25, blur: 24 * s, dy: -12 * s) { rgb(0.98, 0.55, 0.20).setFill(); bg.fill() } } else { rgb(0.98, 0.55, 0.20).setFill(); bg.fill() }
+    NSGraphicsContext.saveGraphicsState(); bg.addClip()
+    NSGradient(colors: [orangeTop, orangeBot])!.draw(in: rect, angle: -90)
+    return (rect, bg, s)
+}
+/// ㄴ자 벽 선반 (흰색). 왼쪽 벽 + 아래 선반. 반환: 선반 윗면 y, 벽 오른쪽 x
+@discardableResult
+func wallShelf(_ rect: NSRect, _ s: CGFloat, thick: CGFloat = 80, shadow: Bool = true) -> (CGFloat, CGFloat) {
+    let x0 = rect.minX + 130 * s, y0 = rect.minY + 150 * s
+    let w = rect.width - 260 * s, h = rect.height - 300 * s
     let p = NSBezierPath()
-    p.move(to: NSPoint(x: x + r, y: y))
-    p.line(to: NSPoint(x: x + w - r, y: y)); p.appendArc(withCenter: NSPoint(x: x + w - r, y: y + r), radius: r, startAngle: -90, endAngle: 0)
-    p.line(to: NSPoint(x: x + w, y: y + h - fold))
-    p.line(to: NSPoint(x: x + w - fold, y: y + h))
-    p.line(to: NSPoint(x: x + r, y: y + h)); p.appendArc(withCenter: NSPoint(x: x + r, y: y + h - r), radius: r, startAngle: 90, endAngle: 180)
-    p.line(to: NSPoint(x: x, y: y + r)); p.appendArc(withCenter: NSPoint(x: x + r, y: y + r), radius: r, startAngle: 180, endAngle: 270)
+    let t = thick * s, r = 28 * s
+    // ㄴ 외곽을 하나의 패스로
+    p.move(to: NSPoint(x: x0 + r, y: y0))
+    p.line(to: NSPoint(x: x0 + w - r, y: y0)); p.appendArc(withCenter: NSPoint(x: x0 + w - r, y: y0 + r), radius: r, startAngle: -90, endAngle: 0)
+    p.line(to: NSPoint(x: x0 + w, y: y0 + t - r)); p.appendArc(withCenter: NSPoint(x: x0 + w - r, y: y0 + t - r), radius: r, startAngle: 0, endAngle: 90)
+    p.line(to: NSPoint(x: x0 + t + r * 0.0, y: y0 + t))
+    p.line(to: NSPoint(x: x0 + t, y: y0 + h - r)); p.appendArc(withCenter: NSPoint(x: x0 + t - r, y: y0 + h - r), radius: r, startAngle: 0, endAngle: 90)
+    p.line(to: NSPoint(x: x0 + r, y: y0 + h)); p.appendArc(withCenter: NSPoint(x: x0 + r, y: y0 + h - r), radius: r, startAngle: 90, endAngle: 180)
+    p.line(to: NSPoint(x: x0, y: y0 + r)); p.appendArc(withCenter: NSPoint(x: x0 + r, y: y0 + r), radius: r, startAngle: 180, endAngle: 270)
     p.close()
-    let f = NSBezierPath()
-    f.move(to: NSPoint(x: x + w - fold, y: y + h))
-    f.line(to: NSPoint(x: x + w - fold, y: y + h - fold))
-    f.line(to: NSPoint(x: x + w, y: y + h - fold))
-    f.close()
-    return (p, f)
+    if shadow { withShadow(0.25, blur: 22 * s, dy: -10 * s) { NSColor.white.setFill(); p.fill() } } else { NSColor.white.setFill(); p.fill() }
+    return (y0 + t, x0 + t)
+}
+func bigArrow(cx: CGFloat, top: CGFloat, bottom: CGFloat, s: CGFloat, w: CGFloat = 70, color: NSColor = .white) {
+    let p = NSBezierPath(); p.lineWidth = w * s; p.lineCapStyle = .round; p.lineJoinStyle = .round
+    p.move(to: NSPoint(x: cx, y: top)); p.line(to: NSPoint(x: cx, y: bottom))
+    let hd = 110 * s
+    p.move(to: NSPoint(x: cx - hd, y: bottom + hd)); p.line(to: NSPoint(x: cx, y: bottom)); p.line(to: NSPoint(x: cx + hd, y: bottom + hd))
+    withShadow(0.2, blur: 16 * s, dy: -8 * s) { color.setStroke(); p.stroke() }
 }
 
-func drawDoc(x: CGFloat, y: CGFloat, w: CGFloat, h: CGFloat, s: CGFloat, paper: NSColor, fold: NSColor, lines: NSColor?) {
-    let (p, f) = docPath(x: x, y: y, w: w, h: h, fold: w * 0.3, r: 14 * s)
-    withShadow(0.22, blur: 18 * s, dy: -8 * s) { paper.setFill(); p.fill() }
-    fold.setFill(); f.fill()
-    if let lc = lines {
-        lc.setFill()
-        for i in 0..<3 {
-            let ly = y + h * 0.22 + CGFloat(i) * h * 0.17
-            NSBezierPath(roundedRect: NSRect(x: x + w * 0.2, y: ly, width: w * (i == 2 ? 0.4 : 0.6), height: h * 0.06), xRadius: h * 0.03, yRadius: h * 0.03).fill()
-        }
-    }
-}
-
-func folderPath(x: CGFloat, y: CGFloat, w: CGFloat, h: CGFloat, r: CGFloat) -> (NSBezierPath, NSBezierPath) {
-    let back = NSBezierPath()
-    back.move(to: NSPoint(x: x, y: y + r)); back.appendArc(withCenter: NSPoint(x: x + r, y: y + r), radius: r, startAngle: 180, endAngle: 270)
-    back.line(to: NSPoint(x: x + w - r, y: y)); back.appendArc(withCenter: NSPoint(x: x + w - r, y: y + r), radius: r, startAngle: 270, endAngle: 360)
-    back.line(to: NSPoint(x: x + w, y: y + h * 0.78 - r)); back.appendArc(withCenter: NSPoint(x: x + w - r, y: y + h * 0.78 - r), radius: r, startAngle: 0, endAngle: 90)
-    back.line(to: NSPoint(x: x + w * 0.46, y: y + h * 0.78))
-    back.line(to: NSPoint(x: x + w * 0.38, y: y + h - r * 0.5))
-    back.line(to: NSPoint(x: x + r, y: y + h)); back.appendArc(withCenter: NSPoint(x: x + r, y: y + h - r), radius: r, startAngle: 90, endAngle: 180)
-    back.close()
-    let front = NSBezierPath(roundedRect: NSRect(x: x, y: y, width: w, height: h * 0.66), xRadius: r, yRadius: r)
-    return (back, front)
-}
-
-func drawFolder(x: CGFloat, y: CGFloat, w: CGFloat, h: CGFloat, s: CGFloat, dark: NSColor, light: NSColor) {
-    let (b, f) = folderPath(x: x, y: y, w: w, h: h, r: 14 * s)
-    withShadow(0.22, blur: 18 * s, dy: -8 * s) { dark.setFill(); b.fill() }
-    light.setFill(); f.fill()
-}
-
-/// 두께 있는 선반(앞면 + 윗면)
-func drawLedge(x: CGFloat, y: CGFloat, w: CGFloat, s: CGFloat, top: NSColor, front: NSColor, thick: CGFloat = 56) {
-    let f = NSBezierPath(roundedRect: NSRect(x: x, y: y, width: w, height: thick * s), xRadius: 16 * s, yRadius: 16 * s)
-    withShadow(0.3, blur: 26 * s, dy: -14 * s) { front.setFill(); f.fill() }
-    top.setFill(); NSBezierPath(roundedRect: NSRect(x: x, y: y + thick * s * 0.55, width: w, height: thick * s * 0.45), xRadius: 14 * s, yRadius: 14 * s).fill()
-}
-
-// E. 주황 배경 — 문서·폴더·사진이 흰 선반 위에 (A의 '추상 네모'를 실제 파일 모양으로)
-func drawE(_ size: CGFloat) {
-    let (rect, bg, s) = squircle(size)
-    withShadow(0.25, blur: 24 * s, dy: -12 * s) { rgb(0.98, 0.55, 0.20).setFill(); bg.fill() }
-    NSGraphicsContext.saveGraphicsState(); bg.addClip()
-    NSGradient(colors: [rgb(1.00, 0.66, 0.28), rgb(0.95, 0.45, 0.16)])!.draw(in: rect, angle: -90)
-    let shelfY = rect.minY + rect.height * 0.30
-    drawLedge(x: rect.minX + 100 * s, y: shelfY, w: rect.width - 200 * s, s: s, top: NSColor.white, front: rgb(0.93, 0.90, 0.86))
-    let base = shelfY + 56 * s
-    drawFolder(x: rect.minX + 140 * s, y: base, w: 200 * s, h: 170 * s, s: s, dark: rgb(0.97, 0.76, 0.22), light: rgb(1.0, 0.85, 0.35))
-    drawDoc(x: rect.minX + 370 * s, y: base, w: 170 * s, h: 230 * s, s: s, paper: NSColor.white, fold: rgb(0.88, 0.88, 0.90), lines: rgb(0.80, 0.80, 0.84))
-    // 사진
-    let ph = NSBezierPath(roundedRect: NSRect(x: rect.minX + 570 * s, y: base, width: 150 * s, height: 150 * s), xRadius: 14 * s, yRadius: 14 * s)
-    withShadow(0.22, blur: 18 * s, dy: -8 * s) { rgb(0.40, 0.72, 0.95).setFill(); ph.fill() }
-    NSGraphicsContext.saveGraphicsState(); ph.addClip()
-    rgb(0.30, 0.60, 0.40).setFill()
-    let m = NSBezierPath(); m.move(to: NSPoint(x: rect.minX + 570 * s, y: base)); m.line(to: NSPoint(x: rect.minX + 640 * s, y: base + 80 * s)); m.line(to: NSPoint(x: rect.minX + 720 * s, y: base)); m.close(); m.fill()
-    rgb(1.0, 0.92, 0.45).setFill(); NSBezierPath(ovalIn: NSRect(x: rect.minX + 670 * s, y: base + 95 * s, width: 32 * s, height: 32 * s)).fill()
-    NSGraphicsContext.restoreGraphicsState()
+// V1. 메뉴바와 동일 — ㄴ + 굵은 화살표
+func drawV1(_ size: CGFloat) {
+    let (rect, _, s) = bgOrange(size)
+    let (top, wallX) = wallShelf(rect, s)
+    let cx = (wallX + rect.maxX - 130 * s) / 2
+    bigArrow(cx: cx, top: rect.maxY - 180 * s, bottom: top + 110 * s, s: s)
     NSGraphicsContext.restoreGraphicsState()
 }
-
-// 소형(16·32pt)용 단순화판 — 요소 둘, 굵은 선반, 그림자 최소
-func drawESmall(_ size: CGFloat) {
-    let (rect, bg, s) = squircle(size)
-    rgb(0.98, 0.55, 0.20).setFill(); bg.fill()
-    NSGraphicsContext.saveGraphicsState(); bg.addClip()
-    NSGradient(colors: [rgb(1.00, 0.66, 0.28), rgb(0.95, 0.45, 0.16)])!.draw(in: rect, angle: -90)
-    let shelfY = rect.minY + rect.height * 0.24
-    let shelf = NSBezierPath(roundedRect: NSRect(x: rect.minX + 80 * s, y: shelfY, width: rect.width - 160 * s, height: 90 * s), xRadius: 30 * s, yRadius: 30 * s)
-    NSColor.white.setFill(); shelf.fill()
-    let base = shelfY + 90 * s
-    // 폴더(노랑) — 단순 두 덩어리
-    let (fb, ff) = folderPath(x: rect.minX + 130 * s, y: base, w: 260 * s, h: 230 * s, r: 30 * s)
-    rgb(0.97, 0.76, 0.22).setFill(); fb.fill()
-    rgb(1.0, 0.86, 0.38).setFill(); ff.fill()
-    // 문서(흰) — 접힌 모서리만, 줄 없음
-    let (dp, df) = docPath(x: rect.minX + 440 * s, y: base, w: 250 * s, h: 320 * s, fold: 80 * s, r: 30 * s)
-    NSColor.white.setFill(); dp.fill()
-    rgb(0.86, 0.86, 0.90).setFill(); df.fill()
+// 소형: V1 과 동일하되 그림자 없음, 더 굵게
+func drawVSmall(_ size: CGFloat) {
+    let (rect, _, s) = bgOrange(size, shadow: false)
+    let (top, wallX) = wallShelf(rect, s, thick: 110, shadow: false)
+    let cx = (wallX + rect.maxX - 130 * s) / 2
+    let p = NSBezierPath(); p.lineWidth = 100 * s; p.lineCapStyle = .round; p.lineJoinStyle = .round
+    let bottom = top + 120 * s, hd = 140 * s
+    p.move(to: NSPoint(x: cx, y: rect.maxY - 190 * s)); p.line(to: NSPoint(x: cx, y: bottom))
+    p.move(to: NSPoint(x: cx - hd, y: bottom + hd)); p.line(to: NSPoint(x: cx, y: bottom)); p.line(to: NSPoint(x: cx + hd, y: bottom + hd))
+    NSColor.white.setStroke(); p.stroke()
     NSGraphicsContext.restoreGraphicsState()
 }
 
@@ -132,14 +88,13 @@ func render(_ size: CGFloat, _ body: (CGFloat) -> Void) -> NSBitmapImageRep {
     NSGraphicsContext.restoreGraphicsState()
     return rep
 }
-// (파일명, 픽셀)
 let files: [(String, CGFloat)] = [
     ("icon_16x16@1x", 16), ("icon_16x16@2x", 32), ("icon_32x32@1x", 32), ("icon_32x32@2x", 64),
     ("icon_128x128@1x", 128), ("icon_128x128@2x", 256), ("icon_256x256@1x", 256), ("icon_256x256@2x", 512),
     ("icon_512x512@1x", 512), ("icon_512x512@2x", 1024),
 ]
 for (name, px) in files {
-    let rep = render(px, px <= 64 ? drawESmall : drawE)
+    let rep = render(px, px <= 64 ? drawVSmall : drawV1)
     try! rep.representation(using: .png, properties: [:])!.write(to: out.appendingPathComponent(name + ".png"))
 }
 print("done")
