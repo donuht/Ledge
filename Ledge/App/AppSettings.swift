@@ -50,6 +50,29 @@ final class AppSettings {
         size = .custom
     }
 
+    static let edgeOffsetDidChange = Notification.Name("com.jasonhwangfilm.ledge.edgeOffsetDidChange")
+
+    /// 가장자리를 따라가는 선반 위치(가장자리별, 0 = 왼쪽/아래 끝, 0.5 = 가운데, 1 = 오른쪽/위 끝).
+    /// 선반 머리 부분을 끌어서 정한다.
+    private var edgeOffsets: [String: CGFloat]
+
+    func edgeOffset(for edge: ShelfEdge) -> CGFloat {
+        edgeOffsets[edge.rawValue] ?? 0.5
+    }
+
+    func setEdgeOffset(_ value: CGFloat, for edge: ShelfEdge) {
+        let v = min(max(value, 0), 1)
+        guard edgeOffsets[edge.rawValue] != v else { return }
+        edgeOffsets[edge.rawValue] = v
+        UserDefaults.standard.set(edgeOffsets.mapValues { Double($0) }, forKey: Keys.edgeOffsets)
+        NotificationCenter.default.post(name: Self.edgeOffsetDidChange, object: nil)
+    }
+
+    /// 현재 가장자리의 선반을 가운데로 되돌린다.
+    func resetEdgeOffset() { setEdgeOffset(0.5, for: edge) }
+
+    var isEdgeOffsetCentered: Bool { abs(edgeOffset(for: edge) - 0.5) < 0.001 }
+
     /// 커서 옆 모드: 끌다가 이만큼 멈춰 있으면 나타난다(초). 0이면 집는 즉시.
     var cursorPauseDelay: Double {
         didSet { UserDefaults.standard.set(cursorPauseDelay, forKey: Keys.cursorPauseDelay) }
@@ -136,6 +159,7 @@ final class AppSettings {
         static let size = "shelf.size"
         static let customVertical = "shelf.customSize.vertical"
         static let customHorizontal = "shelf.customSize.horizontal"
+        static let edgeOffsets = "shelf.edgeOffsets"
         static let autoHideDelay = "behavior.autoHideDelay"
         static let cursorPauseDelay = "behavior.cursorPauseDelay"
         static let clipboardMaxItems = "clipboard.maxItems"
@@ -155,6 +179,7 @@ final class AppSettings {
         }
         customVertical = loadSize(Keys.customVertical, fallback: ShelfSize.medium.size(vertical: true)!)
         customHorizontal = loadSize(Keys.customHorizontal, fallback: ShelfSize.medium.size(vertical: false)!)
+        edgeOffsets = (d.dictionary(forKey: Keys.edgeOffsets) as? [String: Double] ?? [:]).mapValues { CGFloat($0) }
         autoHideDelay = d.object(forKey: Keys.autoHideDelay) as? Double ?? 0.5
         cursorPauseDelay = d.object(forKey: Keys.cursorPauseDelay) as? Double ?? 0.5
         diagnosticLogging = d.bool(forKey: LedgeLog.enabledKey)

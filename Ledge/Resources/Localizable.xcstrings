@@ -1201,6 +1201,26 @@
           }
         }
       }
+    },
+    "선반의 머리 부분이나 빈 곳을 끌면 가장자리를 따라 옮길 수 있습니다.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag the shelf's header or an empty spot to slide it along the edge."
+          }
+        }
+      }
+    },
+    "가운데로": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Center"
+          }
+        }
+      }
     }
   }
 }

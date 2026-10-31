@@ -3,6 +3,10 @@ import Quartz
 
 /// 앱을 활성화하지 않고 모든 스페이스·전체화면 앱 위에 떠 있는 선반 창.
 final class ShelfPanel: NSPanel {
+    /// 항목·버튼이 아닌 곳을 누른 채 몇 pt 이상 끌면 호출된다(선반 자체 옮기기).
+    var onBackgroundDrag: ((NSEvent) -> Void)?
+    private var backgroundDownLocation: NSPoint?
+
     init(contentRect: NSRect) {
         super.init(
             contentRect: contentRect,
@@ -52,8 +56,20 @@ final class ShelfPanel: NSPanel {
                 if firstResponder !== dropView { makeFirstResponder(dropView) }
                 // 항목·버튼이 아닌 빈 곳(스크롤 영역 등) 클릭 = 선택 해제.
                 let onItem = hit.map { $0 is DraggableItemView || $0 is NSButton || $0 is NSControl } ?? false
-                if event.type == .leftMouseDown, !onItem { dropView.backgroundClicked() }
+                if event.type == .leftMouseDown, !onItem {
+                    dropView.backgroundClicked()
+                    backgroundDownLocation = event.locationInWindow
+                }
             }
+        case .leftMouseDragged:
+            if let down = backgroundDownLocation,
+               hypot(event.locationInWindow.x - down.x, event.locationInWindow.y - down.y) > 4 {
+                backgroundDownLocation = nil
+                onBackgroundDrag?(event)
+                return
+            }
+        case .leftMouseUp:
+            backgroundDownLocation = nil
         case .keyDown:
             LedgeLog.write("panel keyDown code=\(event.keyCode) key=\(isKeyWindow) fr=\(firstResponder.map { String(describing: type(of: $0)) } ?? "nil")")
         default:

@@ -64,6 +64,9 @@ final class ShelfPanelController {
         dropView.onPaste = { [weak self] in
             self?.addFromClipboard()
         }
+        panel.onBackgroundDrag = { [weak self] event in
+            self?.beginUserMove(with: event)
+        }
 
         // 평소엔 숨어 있다가, 다른 앱에서 드래그하는 동안 나타나고(설정에 따라 시작 즉시 또는
         // 가장자리에 닿았을 때), 끝난 뒤 비어 있으면 사라진다.
@@ -141,6 +144,47 @@ final class ShelfPanelController {
                 if self.isVisible { self.position() }
             }
         }
+        offsetObserver = NotificationCenter.default.addObserver(
+            forName: AppSettings.edgeOffsetDidChange, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self, !self.isUserMoving else { return }
+                if self.isVisible, self.floatingOrigin == nil { self.position(animate: true) }
+            }
+        }
+    }
+
+    // MARK: - 선반 옮기기 (머리 부분이나 빈 곳을 끌어서)
+
+    private var offsetObserver: (any NSObjectProtocol)?
+    private var isUserMoving = false
+    private var moveEndTimer: Timer?
+
+    /// 빈 곳을 끌면 창을 따라 움직이고, 놓으면 가장자리 모드에선 그 변에 다시 붙여 위치를 기억한다.
+    /// 커서 옆 모드에선 놓은 자리에 그대로 둔다.
+    private func beginUserMove(with event: NSEvent) {
+        isUserMoving = true
+        panel.performDrag(with: event)
+        moveEndTimer?.invalidate()
+        moveEndTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60, repeats: true) { [weak self] timer in
+            guard NSEvent.pressedMouseButtons & 1 == 0 else { return }
+            timer.invalidate()
+            MainActor.assumeIsolated { self?.userMoveEnded() }
+        }
+    }
+
+    private func userMoveEnded() {
+        isUserMoving = false
+        if floatingOrigin != nil {
+            floatingOrigin = panel.frame.origin
+            return
+        }
+        let screen = panel.screen ?? NSScreen.main
+        guard let visible = screen?.visibleFrame else { return }
+        let (frame, offset) = edge.snapped(panel.frame, in: visible)
+        AppSettings.shared.setEdgeOffset(offset, for: edge)
+        LedgeLog.write("shelf moved along \(edge.rawValue) edge offset=\(offset)")
+        panel.setFrame(frame, display: true, animate: true)
     }
 
     private func refreshRootView() {
@@ -261,8 +305,8 @@ final class ShelfPanelController {
         func windowDidEndLiveResize(_ notification: Notification) { onEnd() }
     }
 
-    /// 마우스가 있는 화면의 설정된 가장자리에 붙인다.
-    private func position() {
+    /// 마우스가 있는 화면의 설정된 가장자리에, 기억해 둔 위치(변을 따라가는 비율)로 붙인다.
+    private func position(animate: Bool = false) {
         if let floatingOrigin {
             panel.setFrame(NSRect(origin: floatingOrigin, size: AppSettings.shared.panelSize(for: edge)), display: true)
             return
@@ -270,7 +314,9 @@ final class ShelfPanelController {
         let mouse = NSEvent.mouseLocation
         let screen = NSScreen.screens.first { NSMouseInRect(mouse, $0.frame, false) } ?? NSScreen.main
         guard let visible = screen?.visibleFrame else { return }
-        panel.setFrame(edge.frame(in: visible, size: AppSettings.shared.panelSize(for: edge)), display: true)
+        let frame = edge.frame(in: visible, size: AppSettings.shared.panelSize(for: edge),
+                               offset: AppSettings.shared.edgeOffset(for: edge))
+        panel.setFrame(frame, display: true, animate: animate)
         applyMinSize()
     }
 }

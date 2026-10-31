@@ -16,6 +16,15 @@ struct SettingsView: View {
                     ForEach(ShelfEdge.allCases, id: \.self) { Text($0.title).tag($0) }
                 }
                 .pickerStyle(.segmented)
+                HStack {
+                    Text("선반의 머리 부분이나 빈 곳을 끌면 가장자리를 따라 옮길 수 있습니다.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Button("가운데로") { settings.resetEdgeOffset() }
+                        .controlSize(.small)
+                        .disabled(settings.isEdgeOffsetCentered)
+                }
                 Picker("크기", selection: $settings.size) {
                     ForEach(ShelfSize.allCases, id: \.self) { size in
                         if size != .custom || settings.size == .custom { Text(size.title).tag(size) }
