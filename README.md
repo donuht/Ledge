@@ -4,7 +4,9 @@ macOS용 드래그 선반(shelf) 앱. 끌고 있던 파일·텍스트·링크·�
 
 *A drag-and-drop shelf for macOS. Park files, text, links and images while you switch windows or Spaces, then drag them back out. Built as a personal Yoink replacement. English UI included — see [English](#english) below.*
 
-![Ledge icon](Ledge/Resources/Assets.xcassets/AppIcon.appiconset/icon_128x128@2x.png)
+![Ledge demo — 브라우저 이미지를 선반에 올렸다가 Finder로 꺼내기](docs/demo.gif)
+
+*브라우저에서 이미지를 끌면 커서 옆에 선반이 뜬다. 올려두고 Finder 창으로 가서 다시 끌어낸다. ([mp4](docs/demo.mp4))*
 
 ## 기능
 
