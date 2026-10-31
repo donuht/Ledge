@@ -27,6 +27,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSLog("Ledge: didFinishLaunching")
         LegacyMigration.runIfNeeded()
+        applyLaunchArguments()
         LedgeLog.write("language=\(Locale.preferredLanguages.first ?? "-") sample=\(String(localized: "Ledge 종료"))")
         let shelf = ShelfPanelController()
         shelfController = shelf
@@ -43,5 +44,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         false
+    }
+
+    /// 설치 스크립트용 실행 인자. `--launch-at-login=on|off`로 로그인 항목을 UI 없이 켜고 끈다.
+    private func applyLaunchArguments() {
+        for arg in ProcessInfo.processInfo.arguments {
+            guard arg.hasPrefix("--launch-at-login=") else { continue }
+            let value = arg.dropFirst("--launch-at-login=".count)
+            switch value {
+            case "on": AppSettings.shared.launchAtLogin = true
+            case "off": AppSettings.shared.launchAtLogin = false
+            default: continue
+            }
+            NSLog("Ledge: 실행 인자로 로그인 항목 \(value) → \(AppSettings.shared.launchAtLogin ? "enabled" : "disabled")")
+        }
     }
 }
