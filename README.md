@@ -1,8 +1,8 @@
 # Ledge
 
-macOS용 드래그 선반(shelf) 앱. 끌고 있던 파일·텍스트·링크·이미지를 잠시 올려뒀다가, 다른 창·스페이스·전체화면 앱으로 가서 다시 끌어낸다. Yoink를 대체하려고 직접 만들었다.
+macOS용 드래그 선반(shelf) 앱. 끌고 있던 파일·텍스트·링크·이미지를 잠시 올려뒀다가, 다른 창·스페이스·전체화면 앱으로 가서 다시 끌어낸다. 직접 쓰려고 만들었다.
 
-*A drag-and-drop shelf for macOS. Park files, text, links and images while you switch windows or Spaces, then drag them back out. Built as a personal Yoink replacement. English UI included — see [English](#english) below.*
+*A drag-and-drop shelf for macOS. Park files, text, links and images while you switch windows or Spaces, then drag them back out. Built for my own daily use. English UI included — see [English](#english) below.*
 
 ![Ledge demo — 브라우저 이미지를 선반에 올렸다가 Finder로 꺼내기](docs/demo.gif)
 
