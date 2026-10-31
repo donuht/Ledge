@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 
 /// 선반 항목 한 줄(AppKit). 끌면 파일 URL을 페이스트보드에 실어 내보내고, 잠기지 않았으면 선반에서 제거한다.
-/// 클릭 = 선택(⌘클릭 = 추가 선택), 더블클릭 = 열기, 오른쪽 클릭 = 컨텍스트 메뉴. x 버튼은 별도 서브뷰라 드래그를 가로채지 않는다.
+/// 클릭 = 선택(⌘클릭 = 토글, ⇧클릭 = 범위), 더블클릭 = 열기, 오른쪽 클릭 = 컨텍스트 메뉴. x 버튼은 별도 서브뷰라 드래그를 가로채지 않는다.
 final class DraggableItemView: NSView, NSDraggingSource {
     /// row: 세로 목록용(아이콘 왼쪽·이름 오른쪽). card: 가로 목록용(아이콘 위·이름 아래).
     enum Style { case row, card }
@@ -244,7 +244,7 @@ final class DraggableItemView: NSView, NSDraggingSource {
     override func mouseUp(with event: NSEvent) {
         guard mouseDownPoint != nil else { return }
         mouseDownPoint = nil
-        store?.select(item.id, extend: event.modifierFlags.contains(.command))
+        store?.select(item.id, modifiers: event.modifierFlags)
         LedgeLog.write("item select \(item.name) selected=\(store?.selectedIDs.count ?? -1) key=\(window?.isKeyWindow ?? false) fr=\(window?.firstResponder.map { String(describing: type(of: $0)) } ?? "nil")")
         if let store { QuickLookController.shared.update(urls: store.selectedItems.flatMap(\.urls)) }
     }

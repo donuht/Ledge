@@ -140,12 +140,32 @@ final class ShelfStore {
 
     // MARK: - 선택
 
-    func select(_ id: ShelfItem.ID, extend: Bool) {
-        if extend {
+    /// 범위 선택(⇧클릭)의 기준점: 마지막으로 ⇧ 없이 클릭한 항목.
+    private var anchorID: ShelfItem.ID?
+
+    /// 클릭 = 그것만, ⌘클릭 = 토글, ⇧클릭 = 기준점부터 범위(⌘⇧ = 범위를 기존 선택에 더함).
+    func select(_ id: ShelfItem.ID, modifiers: NSEvent.ModifierFlags) {
+        let flags = modifiers.intersection([.command, .shift])
+        if flags.contains(.shift), let anchor = anchorID,
+           let a = items.firstIndex(where: { $0.id == anchor }),
+           let b = items.firstIndex(where: { $0.id == id }) {
+            let range = Set(items[min(a, b)...max(a, b)].map(\.id))
+            if flags.contains(.command) { selectedIDs.formUnion(range) } else { selectedIDs = range }
+            return
+        }
+        if flags.contains(.command) {
             if selectedIDs.contains(id) { selectedIDs.remove(id) } else { selectedIDs.insert(id) }
         } else {
             selectedIDs = [id]
         }
+        anchorID = id
+    }
+
+    /// 고무줄 선택 등 바깥에서 계산한 선택을 통째로 적용한다. 선반에 없는 id는 버린다.
+    func setSelection(_ ids: Set<ShelfItem.ID>) {
+        let valid = Set(items.map(\.id))
+        let next = ids.intersection(valid)
+        if next != selectedIDs { selectedIDs = next }
     }
 
     /// 컨텍스트 메뉴용: 이미 선택에 포함돼 있으면 그대로, 아니면 이 항목만 선택.

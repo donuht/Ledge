@@ -23,10 +23,32 @@ final class DropTargetView: NSView {
         QuickLookController.shared.close()
     }
 
+    /// ⌘A·⌘V·⌘Z. 이 앱은 메인 메뉴가 없고 SwiftUI 호스팅 뷰가 키 이퀴밸런트를 먼저 가로챌 수 있어
+    /// keyDown에 기대지 않고 패널의 sendEvent에서 바로 부른다.
+    func handleCommandKey(_ event: NSEvent) -> Bool {
+        guard let store, event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .command else { return false }
+        switch event.charactersIgnoringModifiers {
+        case "a": store.selectAll()
+        case "v": onPaste?()
+        case "z": store.restoreLastRemoved()
+        default: return false
+        }
+        LedgeLog.write("dropView command key \(event.charactersIgnoringModifiers ?? "")")
+        return true
+    }
+
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        handleCommandKey(event) || super.performKeyEquivalent(with: event)
+    }
+
+    override func selectAll(_ sender: Any?) {
+        store?.selectAll()
+    }
+
     override func keyDown(with event: NSEvent) {
         LedgeLog.write("dropView keyDown code=\(event.keyCode)")
         guard let store else { return super.keyDown(with: event) }
-        let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        if handleCommandKey(event) { return }
         switch event.keyCode {
         case 49: // space
             let selected = store.selectedItems
@@ -40,15 +62,75 @@ final class DropTargetView: NSView {
         case 36, 76: // return
             for url in store.selectedItems.flatMap(\.urls) { NSWorkspace.shared.open(url) }
         default:
-            if flags == .command, event.charactersIgnoringModifiers == "a" {
-                store.selectAll()
-            } else if flags == .command, event.charactersIgnoringModifiers == "v" {
-                onPaste?()
-            } else if flags == .command, event.charactersIgnoringModifiers == "z" {
-                store.restoreLastRemoved()
-            } else {
-                super.keyDown(with: event)
-            }
+            super.keyDown(with: event)
+        }
+    }
+
+    // MARK: - 고무줄 선택 (목록 빈 곳을 끌어서)
+
+    private var rubberBandOrigin: NSPoint?
+    private var rubberBandBase: Set<ShelfItem.ID> = []
+    private let rubberBandView: NSView = {
+        let v = NSView()
+        v.wantsLayer = true
+        v.layer?.backgroundColor = NSColor.controlAccentColor.withAlphaComponent(0.15).cgColor
+        v.layer?.borderColor = NSColor.controlAccentColor.withAlphaComponent(0.6).cgColor
+        v.layer?.borderWidth = 1
+        v.layer?.cornerRadius = 2
+        return v
+    }()
+
+    var isRubberBanding: Bool { rubberBandOrigin != nil }
+
+    /// 목록(스크롤 영역) 안의 점인지. 머리 부분과 빈 상태는 false → 거기를 끌면 창 옮기기.
+    func isInList(_ pointInWindow: NSPoint) -> Bool {
+        guard let scroll = firstDescendant(NSScrollView.self, in: self) else { return false }
+        return scroll.bounds.contains(scroll.convert(pointInWindow, from: nil))
+    }
+
+    func beginRubberBand(at pointInWindow: NSPoint, modifiers: NSEvent.ModifierFlags) {
+        rubberBandOrigin = convert(pointInWindow, from: nil)
+        let keep = !modifiers.intersection([.command, .shift]).isEmpty
+        rubberBandBase = keep ? (store?.selectedIDs ?? []) : []
+    }
+
+    func updateRubberBand(to pointInWindow: NSPoint) {
+        guard let origin = rubberBandOrigin, let store else { return }
+        let p = convert(pointInWindow, from: nil)
+        let rect = NSRect(x: min(origin.x, p.x), y: min(origin.y, p.y),
+                          width: abs(p.x - origin.x), height: abs(p.y - origin.y))
+        if rubberBandView.superview == nil { addSubview(rubberBandView, positioned: .above, relativeTo: nil) }
+        rubberBandView.frame = rect
+        // 스크롤로 가려진 줄은 고르지 않도록 목록의 보이는 영역 안에서만 겹침을 본다.
+        var hitRect = rect
+        if let scroll = firstDescendant(NSScrollView.self, in: self) {
+            hitRect = rect.intersection(scroll.convert(scroll.bounds, to: self))
+        }
+        var ids = rubberBandBase
+        for row in descendants(DraggableItemView.self, in: self)
+        where row.convert(row.bounds, to: self).intersects(hitRect) {
+            ids.insert(row.item.id)
+        }
+        store.setSelection(ids)
+    }
+
+    func endRubberBand() {
+        rubberBandOrigin = nil
+        rubberBandView.removeFromSuperview()
+        if let store { QuickLookController.shared.update(urls: store.selectedItems.flatMap(\.urls)) }
+    }
+
+    private func firstDescendant<T: NSView>(_ type: T.Type, in view: NSView) -> T? {
+        for sub in view.subviews {
+            if let hit = sub as? T { return hit }
+            if let hit = firstDescendant(type, in: sub) { return hit }
+        }
+        return nil
+    }
+
+    private func descendants<T: NSView>(_ type: T.Type, in view: NSView) -> [T] {
+        view.subviews.flatMap { sub -> [T] in
+            (sub as? T).map { [$0] } ?? descendants(type, in: sub)
         }
     }
 

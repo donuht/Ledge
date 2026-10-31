@@ -17,7 +17,7 @@ struct SettingsView: View {
                 }
                 .pickerStyle(.segmented)
                 HStack {
-                    Text("선반의 머리 부분이나 빈 곳을 끌면 가장자리를 따라 옮길 수 있습니다.")
+                    Text("선반의 머리 부분(아이콘·개수 줄)을 끌면 가장자리를 따라 옮길 수 있습니다.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Spacer()

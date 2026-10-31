@@ -3,7 +3,8 @@ import Quartz
 
 /// 앱을 활성화하지 않고 모든 스페이스·전체화면 앱 위에 떠 있는 선반 창.
 final class ShelfPanel: NSPanel {
-    /// 항목·버튼이 아닌 곳을 누른 채 몇 pt 이상 끌면 호출된다(선반 자체 옮기기).
+    /// 머리 부분(또는 빈 선반)을 누른 채 몇 pt 이상 끌면 호출된다(선반 자체 옮기기).
+    /// 목록 안의 빈 곳을 끌면 창을 옮기지 않고 고무줄 선택이 된다.
     var onBackgroundDrag: ((NSEvent) -> Void)?
     private var backgroundDownLocation: NSPoint?
 
@@ -54,14 +55,22 @@ final class ShelfPanel: NSPanel {
             makeKey()
             if let dropView = contentView as? DropTargetView {
                 if firstResponder !== dropView { makeFirstResponder(dropView) }
-                // 항목·버튼이 아닌 빈 곳(스크롤 영역 등) 클릭 = 선택 해제.
+                // 항목·버튼이 아닌 빈 곳 클릭 = 선택 해제(⌘·⇧를 누른 채면 유지).
                 let onItem = hit.map { $0 is DraggableItemView || $0 is NSButton || $0 is NSControl } ?? false
                 if event.type == .leftMouseDown, !onItem {
-                    dropView.backgroundClicked()
-                    backgroundDownLocation = event.locationInWindow
+                    if event.modifierFlags.intersection([.command, .shift]).isEmpty { dropView.backgroundClicked() }
+                    if dropView.isInList(event.locationInWindow) {
+                        dropView.beginRubberBand(at: event.locationInWindow, modifiers: event.modifierFlags)
+                    } else {
+                        backgroundDownLocation = event.locationInWindow
+                    }
                 }
             }
         case .leftMouseDragged:
+            if let dropView = contentView as? DropTargetView, dropView.isRubberBanding {
+                dropView.updateRubberBand(to: event.locationInWindow)
+                return
+            }
             if let down = backgroundDownLocation,
                hypot(event.locationInWindow.x - down.x, event.locationInWindow.y - down.y) > 4 {
                 backgroundDownLocation = nil
@@ -70,8 +79,13 @@ final class ShelfPanel: NSPanel {
             }
         case .leftMouseUp:
             backgroundDownLocation = nil
+            if let dropView = contentView as? DropTargetView, dropView.isRubberBanding {
+                dropView.endRubberBand()
+                return
+            }
         case .keyDown:
             LedgeLog.write("panel keyDown code=\(event.keyCode) key=\(isKeyWindow) fr=\(firstResponder.map { String(describing: type(of: $0)) } ?? "nil")")
+            if let dropView = contentView as? DropTargetView, dropView.handleCommandKey(event) { return }
         default:
             break
         }
