@@ -20,7 +20,7 @@ final class ShelfStore {
             /// 휴지통으로 보낸 스니펫 파일(원래 경로 → 휴지통 안 경로). 되살리면 다시 가져온다.
             var trashed: [URL: URL] = [:]
         }
-        let entries: [Entry]
+        var entries: [Entry]
     }
 
     var isEmpty: Bool { items.isEmpty }
@@ -34,9 +34,15 @@ final class ShelfStore {
     private let defaultsKey = "shelf.items.v2"
     private let legacyDefaultsKey = "shelf.itemPaths"
     private let maxRemovedBatches = 50
+    /// 드래그로 내보낸 스니펫을 휴지통으로 보내기까지 기다리는 시간.
+    /// 받는 앱(클로드·슬랙 같은 Electron 앱)은 드롭이 끝난 뒤에 비동기로 파일을 읽으므로 바로 지우면 "파일 없음"이 난다.
+    static let exportTrashDelay: TimeInterval = 60
 
     init(loadPersisted: Bool = true) {
-        if loadPersisted { load() }
+        if loadPersisted {
+            load()
+            sweepOrphanSnippets()
+        }
     }
 
     // MARK: - 추가·제거
@@ -93,9 +99,29 @@ final class ShelfStore {
     }
 
     /// 드래그해 내보낸 뒤: 잠기지 않은 항목만 선반에서 내려간다.
+    /// 스니펫 파일은 받는 앱이 다 읽을 시간을 주고 나서(`exportTrashDelay`) 휴지통으로 보낸다.
     func exported(_ item: ShelfItem) {
         guard !item.isLocked else { return }
-        remove(item)
+        guard let index = items.firstIndex(where: { $0.id == item.id }) else { return }
+        items.remove(at: index)
+        selectedIDs.remove(item.id)
+        appendRemoved(RemovedBatch(entries: [.init(index: index, item: item)]))
+        save()
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.exportTrashDelay) { [weak self] in
+            self?.trashExportedSnippets(of: item)
+        }
+    }
+
+    /// 지연 삭제: 그 사이 되살려졌으면 두고, 아니면 휴지통으로 보내고 되살리기 기록에 경로를 남긴다.
+    private func trashExportedSnippets(of item: ShelfItem) {
+        guard !items.contains(where: { $0.id == item.id }) else { return }
+        let trashed = trashSnippets(of: item)
+        guard !trashed.isEmpty else { return }
+        for b in removedBatches.indices {
+            for e in removedBatches[b].entries.indices where removedBatches[b].entries[e].item.id == item.id {
+                removedBatches[b].entries[e].trashed = trashed
+            }
+        }
     }
 
     /// 마지막으로 제거한 항목(또는 전체 비우기 묶음)을 원래 자리에 되돌린다.
@@ -126,12 +152,31 @@ final class ShelfStore {
         return trashed
     }
 
+    /// 지연 삭제 전에 앱이 끝나 남은 스니펫(선반에 없고, 만든 지 10분 넘은 것)을 시작할 때 휴지통으로 보낸다.
+    private func sweepOrphanSnippets() {
+        let fm = FileManager.default
+        let dir = SnippetWriter.directory
+        guard let names = try? fm.contentsOfDirectory(atPath: dir.path(percentEncoded: false)) else { return }
+        let onShelf = Set(items.flatMap(\.urls).map { $0.path(percentEncoded: false) })
+        for name in names where !name.hasPrefix(".") {
+            let url = dir.appendingPathComponent(name).standardizedFileURL
+            guard !onShelf.contains(url.path(percentEncoded: false)),
+                  let attrs = try? fm.attributesOfItem(atPath: url.path(percentEncoded: false)),
+                  let created = attrs[.creationDate] as? Date, Date().timeIntervalSince(created) > 600 else { continue }
+            try? fm.trashItem(at: url, resultingItemURL: nil)
+        }
+    }
+
     private func pushRemoved(_ batch: RemovedBatch) {
         let batch = RemovedBatch(entries: batch.entries.map { entry in
             var entry = entry
             entry.trashed = trashSnippets(of: entry.item)
             return entry
         })
+        appendRemoved(batch)
+    }
+
+    private func appendRemoved(_ batch: RemovedBatch) {
         removedBatches.append(batch)
         if removedBatches.count > maxRemovedBatches {
             removedBatches.removeFirst(removedBatches.count - maxRemovedBatches)
