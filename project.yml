@@ -10,7 +10,7 @@ settings:
   base:
     SWIFT_VERSION: "6.0"
     SWIFT_STRICT_CONCURRENCY: complete
-    MARKETING_VERSION: "0.1.0"
+    MARKETING_VERSION: "0.2.0"
     CURRENT_PROJECT_VERSION: "1"
     # 로컬 빌드는 ad-hoc 서명. 배포(P6)에서 Developer ID로 교체.
     CODE_SIGN_STYLE: Manual
