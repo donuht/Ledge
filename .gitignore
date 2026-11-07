@@ -23,3 +23,6 @@ Ledge.xcodeproj/
 # macOS
 .DS_Store
 dist/
+
+# API 워커 작업 폴더 (브리프·보고·로그)
+_API_WORKER/

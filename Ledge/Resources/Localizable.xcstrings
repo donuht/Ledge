@@ -912,6 +912,66 @@
         }
       }
     },
+    "링크 복사": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy Link"
+          }
+        }
+      }
+    },
+    "링크용 경로 복사": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy Link Path"
+          }
+        }
+      }
+    },
+    "영상 정보 복사": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy Video Info"
+          }
+        }
+      }
+    },
+    "소리 있음": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "audio"
+          }
+        }
+      }
+    },
+    "무음": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "no audio"
+          }
+        }
+      }
+    },
+    "영상 파일이 없습니다.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No video files selected."
+          }
+        }
+      }
+    },
     "공유…": {
       "localizations": {
         "en": {

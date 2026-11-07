@@ -54,6 +54,66 @@
 				<string>public.file-url</string>
 			</array>
 		</dict>
+		<dict>
+			<key>NSMenuItem</key>
+			<dict>
+				<key>default</key>
+				<string>Copy Markdown Link</string>
+			</dict>
+			<key>NSMessage</key>
+			<string>copyMarkdownLink</string>
+			<key>NSPortName</key>
+			<string>Ledge</string>
+			<key>NSRequiredContext</key>
+			<dict>
+				<key>NSServiceCategory</key>
+				<string>public.item</string>
+			</dict>
+			<key>NSSendTypes</key>
+			<array>
+				<string>public.file-url</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSMenuItem</key>
+			<dict>
+				<key>default</key>
+				<string>Copy Link Path</string>
+			</dict>
+			<key>NSMessage</key>
+			<string>copyLinkPath</string>
+			<key>NSPortName</key>
+			<string>Ledge</string>
+			<key>NSRequiredContext</key>
+			<dict>
+				<key>NSServiceCategory</key>
+				<string>public.item</string>
+			</dict>
+			<key>NSSendTypes</key>
+			<array>
+				<string>public.file-url</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSMenuItem</key>
+			<dict>
+				<key>default</key>
+				<string>Copy Video Info</string>
+			</dict>
+			<key>NSMessage</key>
+			<string>copyVideoInfo</string>
+			<key>NSPortName</key>
+			<string>Ledge</string>
+			<key>NSRequiredContext</key>
+			<dict>
+				<key>NSServiceCategory</key>
+				<string>public.item</string>
+			</dict>
+			<key>NSSendTypes</key>
+			<array>
+				<string>public.file-url</string>
+			</array>
+		</dict>
 	</array>
 </dict>
 </plist>

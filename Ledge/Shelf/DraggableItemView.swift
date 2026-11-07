@@ -188,6 +188,14 @@ final class DraggableItemView: NSView, NSDraggingSource {
         alphaValue = exists ? 1 : 0.45
         let pathList = current.paths.joined(separator: "\n")
         toolTip = exists ? pathList : String(localized: "원본을 찾을 수 없음") + "\n" + pathList
+        // 영상이면 길이·해상도·fps·코덱 요약을 툴팁 첫 줄에 붙인다(비동기, 그새 항목이 바뀌었으면 버린다).
+        if exists, !current.isStack, MediaInfoProvider.isVideo(current.url) {
+            Task { @MainActor [weak self] in
+                guard let info = await MediaInfoProvider.info(for: current.url),
+                      let self, self.item.id == current.id, self.item.url == current.url else { return }
+                self.toolTip = info.summary + "\n" + pathList
+            }
+        }
     }
 
     private func updateBackground() {
@@ -334,6 +342,11 @@ final class DraggableItemView: NSView, NSDraggingSource {
         menu.addItem(.separator())
         menu.addItem(withTitle: String(localized: "Finder에서 보기"), action: #selector(revealInFinder), keyEquivalent: "").target = self
         menu.addItem(withTitle: String(localized: "경로 복사") + plural, action: #selector(copyPaths), keyEquivalent: "").target = self
+        menu.addItem(withTitle: String(localized: "링크 복사") + plural, action: #selector(copyMarkdownLinks), keyEquivalent: "").target = self
+        menu.addItem(withTitle: String(localized: "링크용 경로 복사") + plural, action: #selector(copyLinkPaths), keyEquivalent: "").target = self
+        if !urls.isEmpty, urls.allSatisfy(MediaInfoProvider.isVideo) {
+            menu.addItem(withTitle: String(localized: "영상 정보 복사") + plural, action: #selector(copyVideoInfo), keyEquivalent: "").target = self
+        }
         menu.addItem(withTitle: String(localized: "공유…"), action: #selector(share), keyEquivalent: "").target = self
         menu.addItem(.separator())
         if !item.isStack, targets.count == 1 {
@@ -410,6 +423,21 @@ final class DraggableItemView: NSView, NSDraggingSource {
         let pb = NSPasteboard.general
         pb.clearContents()
         pb.setString(targetURLs.map { $0.path(percentEncoded: false) }.joined(separator: "\n"), forType: .string)
+    }
+
+    @objc private func copyMarkdownLinks() { LinkFormatter.copy(targetURLs, as: .markdown) }
+    @objc private func copyLinkPaths() { LinkFormatter.copy(targetURLs, as: .path) }
+
+    /// 한 항목당 한 줄 `파일명: 요약`. 아직 못 읽은 정보는 읽을 때까지 기다린 뒤 복사한다.
+    @objc private func copyVideoInfo() {
+        let urls = targetURLs
+        Task { @MainActor in
+            let text = await MediaInfoProvider.lines(for: urls)
+            guard !text.isEmpty else { return }
+            let pb = NSPasteboard.general
+            pb.clearContents()
+            pb.setString(text, forType: .string)
+        }
     }
 
     // MARK: - 공유 (C4) · 복사/이동/이름 변경 (C5)

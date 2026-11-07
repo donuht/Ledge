@@ -52,6 +52,30 @@ targets:
               - public.file-url
             NSRequiredContext:
               NSServiceCategory: public.item
+          - NSMenuItem:
+              default: "Copy Markdown Link"
+            NSMessage: copyMarkdownLink
+            NSPortName: Ledge
+            NSSendTypes:
+              - public.file-url
+            NSRequiredContext:
+              NSServiceCategory: public.item
+          - NSMenuItem:
+              default: "Copy Link Path"
+            NSMessage: copyLinkPath
+            NSPortName: Ledge
+            NSSendTypes:
+              - public.file-url
+            NSRequiredContext:
+              NSServiceCategory: public.item
+          - NSMenuItem:
+              default: "Copy Video Info"
+            NSMessage: copyVideoInfo
+            NSPortName: Ledge
+            NSSendTypes:
+              - public.file-url
+            NSRequiredContext:
+              NSServiceCategory: public.item
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.jasonhwangfilm.ledge
